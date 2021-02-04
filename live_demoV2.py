@@ -153,21 +153,26 @@ def execute(change):
 
 
 def main():
-    vs1 = WebcamVideoStream(src=gstreamer_pipeline(sensor_id=0), device=cv2.CAP_GSTREAMER).start()
-    # cap = cv2.VideoCapture(4)
-    while True:
-        t0 = time.time()
-        frame1 = vs1.read()
-        # _, frame1 = cap.read()
-        img = cv2.resize(frame1, (224,224))
-        frame1 = frame1[...,::-1]
-        # image_tf = tf.convert_to_tensor(frame1)
-        # print(image_tf.shape)
-        # resize_tf = tf.image.resize(image_tf, (224, 224))
-        cv2.imshow("frame1", frame1)
-        #execute({'new': image_tf.numpy()})
-        t1 = time.time()
-        print(1 / (t1 - t0))
+    try:
+        vs1 = WebcamVideoStream(src=gstreamer_pipeline(sensor_id=0), device=cv2.CAP_GSTREAMER).start()
+        # cap = cv2.VideoCapture(4)
+        while True:
+            t0 = time.time()
+            frame1 = vs1.read()
+            # _, frame1 = cap.read()
+            img = cv2.resize(frame1, (224,224))
+            frame1 = frame1[...,::-1]
+            # image_tf = tf.convert_to_tensor(frame1)
+            # print(image_tf.shape)
+            # resize_tf = tf.image.resize(image_tf, (224, 224))
+            cv2.imshow("frame1", frame1)
+            #execute({'new': image_tf.numpy()})
+            t1 = time.time()
+            print(1 / (t1 - t0))
+    except Exception as e:
+        print(e)
+        cv2.destroyAllWindows()
+        vs1.stop()
 
     cv2.destroyAllWindows()
     vs1.stop()
