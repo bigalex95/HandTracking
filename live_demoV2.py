@@ -157,9 +157,9 @@ def main():
     # cap = cv2.VideoCapture(4)
     while True:
         t0 = time.time()
-        #frame1 = vs1.read()
-        _, frame1 = cap.read()
-        #img = cv2.resize(frame1, (224,224))
+        frame1 = vs1.read()
+        # _, frame1 = cap.read()
+        img = cv2.resize(frame1, (224,224))
         frame1 = frame1[...,::-1]
         # image_tf = tf.convert_to_tensor(frame1)
         # print(image_tf.shape)
@@ -171,3 +171,6 @@ def main():
 
     cv2.destroyAllWindows()
     vs1.stop()
+
+if __name__ == "__main__":
+    main()
