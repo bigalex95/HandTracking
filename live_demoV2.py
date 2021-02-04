@@ -175,7 +175,6 @@ def main():
         print(e)
         cv2.destroyAllWindows()
         vs1.stop()
-        break
 
     cv2.destroyAllWindows()
     vs1.stop()
