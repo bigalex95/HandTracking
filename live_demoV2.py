@@ -139,6 +139,8 @@ def execute(change):
     counts, objects, peaks = parse_objects(cmap, paf)#, cmap_threshold=0.15, link_threshold=0.15)
     draw_objects(image, counts, objects, peaks)
     cv2.imshow("execute", image)
+
+
 def main():
     vs1 = WebcamVideoStream(src=gstreamer_pipeline(sensor_id=0), device=cv2.CAP_GSTREAMER).start()
     cap = cv2.VideoCapture(4)
