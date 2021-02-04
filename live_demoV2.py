@@ -1,4 +1,4 @@
-import tensorflow as tf
+# import tensorflow as tf
 import json
 import trt_pose.coco
 import trt_pose.models
@@ -15,16 +15,16 @@ from trt_pose.parse_objects import ParseObjects
 from imutils.video import FPS
 from threading import Thread
 
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-  # Restrict TensorFlow to only use the first GPU
-  try:
-    tf.config.experimental.set_visible_devices(gpus[0], 'GPU')
-    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPU")
-  except RuntimeError as e:
-    # Visible devices must be set before GPUs have been initialized
-    print(e)
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# if gpus:
+#   # Restrict TensorFlow to only use the first GPU
+#   try:
+#     tf.config.experimental.set_visible_devices(gpus[0], 'GPU')
+#     logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+#     print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPU")
+#   except RuntimeError as e:
+#     # Visible devices must be set before GPUs have been initialized
+#     print(e)
 
 with open('human_pose.json', 'r') as f:
     human_pose = json.load(f)
@@ -154,17 +154,20 @@ def execute(change):
 
 def main():
     vs1 = WebcamVideoStream(src=gstreamer_pipeline(sensor_id=0), device=cv2.CAP_GSTREAMER).start()
-    cap = cv2.VideoCapture(4)
+    # cap = cv2.VideoCapture(4)
     while True:
+        t0 = time.time()
         #frame1 = vs1.read()
         _, frame1 = cap.read()
         #img = cv2.resize(frame1, (224,224))
         frame1 = frame1[...,::-1]
-        image_tf = tf.convert_to_tensor(frame1)
-        print(image_tf.shape)
-        resize_tf = tf.image.resize(image_tf, (224, 224))
+        # image_tf = tf.convert_to_tensor(frame1)
+        # print(image_tf.shape)
+        # resize_tf = tf.image.resize(image_tf, (224, 224))
         cv2.imshow("frame1", frame1)
         #execute({'new': image_tf.numpy()})
+        t1 = time.time()
+        print(1 / (t1 - t0))
 
     cv2.destroyAllWindows()
     vs1.stop()
