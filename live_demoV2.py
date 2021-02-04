@@ -169,10 +169,13 @@ def main():
             #execute({'new': image_tf.numpy()})
             t1 = time.time()
             print(1 / (t1 - t0))
+            if ord(cv2.waitKey(1)) == "q":
+                break
     except Exception as e:
         print(e)
         cv2.destroyAllWindows()
         vs1.stop()
+        break
 
     cv2.destroyAllWindows()
     vs1.stop()
