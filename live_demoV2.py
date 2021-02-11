@@ -15,6 +15,7 @@ from trt_pose.parse_objects import ParseObjects
 #from imutils.video import FPS
 from threading import Thread
 
+
 class WebcamVideoStream:
     def __init__(self, src=0, device=None):
         # initialize the video camera stream and read the first frame
@@ -33,10 +34,10 @@ class WebcamVideoStream:
     def update(self):
         # keep looping infinitely until the thread is stopped
         while True:
-    	    # if the thread indicator variable is set, stop the thread
+            # if the thread indicator variable is set, stop the thread
             if self.stopped:
                 return
-	    
+
             # otherwise, read the next frame from the stream
             (self.grabbed, self.frame) = self.stream.read()
 
@@ -48,12 +49,13 @@ class WebcamVideoStream:
         # indicate that the thread should be stopped
         self.stopped = True
 
+
 def gstreamer_pipeline(
     sensor_id=0,
     capture_width=3840,
     capture_height=2160,
-    display_width=1920, #2560
-    display_height=1080, #1440
+    display_width=1920,  # 2560
+    display_height=1080,  # 1440
     framerate=60,
     flip_method=0,
 ):
@@ -88,6 +90,7 @@ def gstreamer_pipeline(
 #     # Visible devices must be set before GPUs have been initialized
 #     print(e)
 
+
 with open('human_pose.json', 'r') as f:
     human_pose = json.load(f)
 
@@ -96,7 +99,8 @@ topology = trt_pose.coco.coco_category_to_topology(human_pose)
 num_parts = len(human_pose['keypoints'])
 num_links = len(human_pose['skeleton'])
 
-model = trt_pose.models.resnet18_baseline_att(num_parts, 2 * num_links).cuda().eval()
+model = trt_pose.models.resnet18_baseline_att(
+    num_parts, 2 * num_links).cuda().eval()
 
 MODEL_WEIGHTS = 'resnet18_baseline_att_224x224_A_epoch_249.pth'
 
@@ -107,7 +111,8 @@ HEIGHT = 224
 
 data = torch.zeros((1, 3, HEIGHT, WIDTH)).cuda()
 
-model_trt = torch2trt.torch2trt(model, [data], fp16_mode=True, max_workspace_size=1<<25)
+model_trt = torch2trt.torch2trt(
+    model, [data], fp16_mode=True, max_workspace_size=1 << 25)
 
 OPTIMIZED_MODEL = 'resnet18_baseline_att_224x224_A_epoch_249_trt.pth'
 
@@ -129,6 +134,7 @@ mean = torch.Tensor([0.485, 0.456, 0.406]).cuda()
 std = torch.Tensor([0.229, 0.224, 0.225]).cuda()
 device = torch.device('cuda')
 
+
 def preprocess(image):
     global device
     device = torch.device('cuda')
@@ -140,24 +146,30 @@ def preprocess(image):
     image.sub_(mean[:, None, None]).div_(std[:, None, None])
     return image[None, ...]
 
+
 parse_objects = ParseObjects(topology)
 draw_objects = DrawObjects(topology)
+
 
 def execute(change):
     image = change['new']
     data = preprocess(image)
     cmap, paf = model_trt(data)
     cmap, paf = cmap.detach().cpu(), paf.detach().cpu()
-    counts, objects, peaks = parse_objects(cmap, paf)#, cmap_threshold=0.15, link_threshold=0.15)
+    # , cmap_threshold=0.15, link_threshold=0.15)
+    counts, objects, peaks = parse_objects(cmap, paf)
     draw_objects(image, counts, objects, peaks)
     cv2.imshow("execute", image)
 
-cv2.namedWindow('execute',cv2.WINDOW_NORMAL)
-cv2.namedWindow('frame1',cv2.WINDOW_NORMAL)
+
+cv2.namedWindow('execute', cv2.WINDOW_NORMAL)
+cv2.namedWindow('frame1', cv2.WINDOW_NORMAL)
+
 
 def main():
     try:
-        vs1 = WebcamVideoStream(src=gstreamer_pipeline(sensor_id=0), device=cv2.CAP_GSTREAMER).start()
+        vs1 = WebcamVideoStream(src=gstreamer_pipeline(
+            sensor_id=0), device=cv2.CAP_GSTREAMER).start()
         # cap = cv2.VideoCapture(4)
         print('start capturing')
         while True:
@@ -170,7 +182,7 @@ def main():
             # print(image_tf.shape)
             resize_tf = tf.image.resize(image_tf, (224, 224))
             resize_tf = tf.cast(resize_tf,  dtype=tf.uint8)
-            #print(resize_tf.dtype)
+            # print(resize_tf.dtype)
             #cv2.imshow("frame1", frame1)
             execute({'new': resize_tf.numpy()})
             t1 = time.time()
@@ -184,6 +196,7 @@ def main():
 
     cv2.destroyAllWindows()
     vs1.stop()
+
 
 if __name__ == "__main__":
     main()

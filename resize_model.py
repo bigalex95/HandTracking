@@ -11,7 +11,7 @@ print(image.dtype)
 IMG_SIZE = 256
 
 resize_model = tf.keras.Sequential([
-  layers.experimental.preprocessing.Resizing(IMG_SIZE, IMG_SIZE),
+    layers.experimental.preprocessing.Resizing(IMG_SIZE, IMG_SIZE),
 ])
 resize_model.compile(optimizer="adam", loss="mean_squared_error")
 test_input = np.random.random((1, 1257, 1245, 3))
