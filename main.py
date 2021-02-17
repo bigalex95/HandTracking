@@ -253,11 +253,7 @@ def main():
             resizeT2.set(frame2)
             resizeTF = resizeT2.getResizeTF()
             # cv2.imshow("frame1", frame1)
-<<<<<<< HEAD
-            poseT2.execute(resizeTF.numpy(),  execute2)
-=======
             poseT2.execute({'new': resizeTF.numpy()}, "Execute2")
->>>>>>> 5855e32e437c25cc32ce4788e9642ce5a9054521
             t1 = time.time()
             print(1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
