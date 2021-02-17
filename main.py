@@ -69,7 +69,6 @@ class poseThreading(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
-
     def get_id(self):
         # returns id of the respective thread
         if hasattr(self, '_thread_id'):
@@ -224,7 +223,7 @@ def gstreamer_pipeline(
 
 
 def main():
-   try:
+    try:
         vs1 = WebcamVideoStream(src=gstreamer_pipeline(
             sensor_id=0), device=cv2.CAP_GSTREAMER).start()
         poseT1 = poseThreading().start()
@@ -245,12 +244,12 @@ def main():
             print(1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
                 break
-   except Exception as e:
-            print(e)
-            cv2.destroyAllWindows()
-            vs1.stop()
-            poseT1.stop()
-            resizeT1.stop()
+    except Exception as e:
+        print(e)
+        cv2.destroyAllWindows()
+        vs1.stop()
+        poseT1.stop()
+        resizeT1.stop()
 
     cv2.destroyAllWindows()
     vs1.stop()
