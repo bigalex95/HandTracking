@@ -95,7 +95,8 @@ class poseThreading(threading.Thread):
         image.sub_(mean[:, None, None]).div_(std[:, None, None])
         return image[None, ...]
 
-    def execute(self, image, name):
+    def execute(self, change, name="execute"):
+        image = change['new']
         data = self.preprocess(image)
         cmap, paf = model_trt(data)
         cmap, paf = cmap.detach().cpu(), paf.detach().cpu()
@@ -248,11 +249,11 @@ def main():
             resizeT1.set(frame1)
             resizeTF = resizeT1.getResizeTF()
             # cv2.imshow("frame1", frame1)
-            poseT1.execute(resizeTF.numpy(), execute1)
+            poseT1.execute({'new': resizeTF.numpy()}, "Execute1")
             resizeT2.set(frame2)
             resizeTF = resizeT2.getResizeTF()
             # cv2.imshow("frame1", frame1)
-            poseT2.execute(resizeTF.numpy(), execute2)
+            poseT2.execute({'new': resizeTF.numpy()}, "Execute2")
             t1 = time.time()
             print(1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
