@@ -16,7 +16,6 @@ import PIL.Image
 from trt_pose.draw_objects import DrawObjects
 from trt_pose.parse_objects import ParseObjects
 # from imutils.video import FPS
-from threading import Thread
 
 with open('human_pose.json', 'r') as f:
     human_pose = json.load(f)
@@ -29,7 +28,7 @@ num_links = len(human_pose['skeleton'])
 model = trt_pose.models.resnet18_baseline_att(
     num_parts, 2 * num_links).cuda().eval()
 
-MODEL_WEIGHTS = 'resnet18_baseline_att_224x224_A_epoch_249.pth'
+MODEL_WEIGHTS = './model/resnet18_baseline_att_224x224_A_epoch_249.pth'
 
 model.load_state_dict(torch.load(MODEL_WEIGHTS))
 
@@ -41,7 +40,7 @@ data = torch.zeros((1, 3, HEIGHT, WIDTH)).cuda()
 model_trt = torch2trt.torch2trt(
     model, [data], fp16_mode=True, max_workspace_size=1 << 25)
 
-OPTIMIZED_MODEL = 'resnet18_baseline_att_224x224_A_epoch_249_trt.pth'
+OPTIMIZED_MODEL = './model/resnet18_baseline_att_224x224_A_epoch_249_trt.pth'
 
 torch.save(model_trt.state_dict(), OPTIMIZED_MODEL)
 
@@ -221,22 +220,24 @@ def gstreamer_pipeline(
         )
     )
 
+cv2.namedWindow('execute', cv2.WINDOW_NORMAL)
+#cv2.namedWindow('frame1', cv2.WINDOW_NORMAL)
 
 def main():
     try:
         vs1 = WebcamVideoStream(src=gstreamer_pipeline(
             sensor_id=0), device=cv2.CAP_GSTREAMER).start()
-        poseT1 = poseThreading().start()
-        # poseT1.start()
-        resizeT1 = resizeThreading(224).start()
-        # resizeT1.start()
+        poseT1 = poseThreading()
+        poseT1.start()
+        resizeT1 = resizeThreading(224)
+        resizeT1.start()
         # cap = cv2.VideoCapture(4)
         print('start capturing')
         while True:
             t0 = time.time()
             frame1 = vs1.read()
             # _, frame1 = cap.read()
-            resizeT1.set(frame)
+            resizeT1.set(frame1)
             resizeTF = resizeT1.getResizeTF()
             # cv2.imshow("frame1", frame1)
             poseT1.execute({'new': resizeTF.numpy()})
