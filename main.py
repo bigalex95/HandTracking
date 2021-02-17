@@ -17,6 +17,8 @@ from trt_pose.draw_objects import DrawObjects
 from trt_pose.parse_objects import ParseObjects
 # from imutils.video import FPS
 
+# TRT Pose Detection variables declaration
+# <==================================================================>
 with open('human_pose.json', 'r') as f:
     human_pose = json.load(f)
 
@@ -62,6 +64,40 @@ device = torch.device('cuda')
 
 parse_objects = ParseObjects(topology)
 draw_objects = DrawObjects(topology)
+# <==================================================================>
+
+
+# Pix2Pix variables declaration
+# <==================================================================>
+generator = tf.saved_model.load("/model/pix2pixTF")
+# <==================================================================>
+
+
+class pix2pixThreading(threading.Thread):
+    def __init__(self, size=256):
+        threading.Thread.__init__(self)
+        self.size = size
+        self.norm = 127.5
+        if self.size == 512:
+            self.norm = 255.5
+
+    def generate_images(self, model, image):
+        prediction = model(image, training=True)
+        return prediction[0]
+
+    def load_from_video(self, image):
+        input_image = tf.cast(image, tf.float32)
+        input_image = tf.image.resize(input_image, [self.size, self.size],
+                                      method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+        input_image = (input_image / self.norm) - 1
+        return input_image
+
+    def getFromModel(self, image):
+        input_image = self.load_from_video(frame)
+        ext_image = tf.expand_dims(input_image, axis=0)
+        generated_image = self.generate_images(generator, ext_image)
+        pil_image = tf.keras.preprocessing.image.array_to_img(generated_image)
+        return np.array(pil_image)
 
 
 class poseThreading(threading.Thread):
@@ -233,12 +269,13 @@ def main():
         poseT1.start()
         resizeT1 = resizeThreading(224)
         resizeT1.start()
+        pix2pixT1 = pix2pixThreading()
+        pix2pixT1.start()
+
         vs2 = WebcamVideoStream(src=gstreamer_pipeline(
             sensor_id=1), device=cv2.CAP_GSTREAMER).start()
-        poseT2 = poseThreading()
-        poseT2.start()
-        resizeT2 = resizeThreading(224)
-        resizeT2.start()
+        pix2pixT2 = pix2pixThreading()
+        pix2pixT2.start()
         # cap = cv2.VideoCapture(4)
         print('start capturing')
         while True:
@@ -246,14 +283,15 @@ def main():
             frame1 = vs1.read()
             frame2 = vs2.read()
             # _, frame1 = cap.read()
+
+            pix2pixImg1 = pix2pixT1.getFromModel(frame1)
+            pix2pixImg2 = pix2pixT2.getFromModel(frame2)
+            cv2.imshow("frame1", pix2pixImg1)
+            cv2.imshow("frame2", pix2pixImg2)
+
             resizeT1.set(frame1)
             resizeTF1 = resizeT1.getResizeTF()
-            resizeT2.set(frame2)
-            resizeTF2 = resizeT2.getResizeTF()
-            cv2.imshow("frame1", resizeTF1.numpy())
-            cv2.imshow("frame2", resizeTF2.numpy())
             poseT1.execute({'new': resizeTF1.numpy()}, "Execute1")
-            poseT2.execute({'new': resizeTF2.numpy()}, "Execute2")
             t1 = time.time()
             print(1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
@@ -265,16 +303,12 @@ def main():
         poseT1.stop()
         resizeT1.stop()
         vs2.stop()
-        poseT2.stop()
-        resizeT2.stop()
 
     cv2.destroyAllWindows()
     vs1.stop()
     poseT1.stop()
     resizeT1.stop()
     vs2.stop()
-    poseT2.stop()
-    resizeT2.stop()
 
 
 if __name__ == "__main__":
