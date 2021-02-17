@@ -87,7 +87,7 @@ class poseThreading(threading.Thread):
     def preprocess(self, image):
         global device
         device = torch.device('cuda')
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = image[..., ::-1]
         # image = PIL.Image.fromarray((image * 255).astype(np.uint8))
         image = PIL.Image.fromarray((image).astype(np.uint8))
         # image = PIL.Image.fromarray((image).astype(np.uint8))
@@ -95,15 +95,14 @@ class poseThreading(threading.Thread):
         image.sub_(mean[:, None, None]).div_(std[:, None, None])
         return image[None, ...]
 
-    def execute(self, change):
-        image = change['new']
+    def execute(self, image, name):
         data = self.preprocess(image)
         cmap, paf = model_trt(data)
         cmap, paf = cmap.detach().cpu(), paf.detach().cpu()
         # , cmap_threshold=0.15, link_threshold=0.15)
         counts, objects, peaks = parse_objects(cmap, paf)
         draw_objects(image, counts, objects, peaks)
-        cv2.imshow("execute", image)
+        cv2.imshow(name, image)
 
 
 class WebcamVideoStream:
@@ -221,7 +220,7 @@ def gstreamer_pipeline(
     )
 
 
-cv2.namedWindow('execute', cv2.WINDOW_NORMAL)
+#cv2.namedWindow('execute', cv2.WINDOW_NORMAL)
 #cv2.namedWindow('frame1', cv2.WINDOW_NORMAL)
 
 
@@ -249,11 +248,11 @@ def main():
             resizeT1.set(frame1)
             resizeTF = resizeT1.getResizeTF()
             # cv2.imshow("frame1", frame1)
-            poseT1.execute({'new': resizeTF.numpy()})
+            poseT1.execute(resizeTF.numpy(), execute1)
             resizeT2.set(frame2)
             resizeTF = resizeT2.getResizeTF()
             # cv2.imshow("frame1", frame1)
-            poseT2.execute({'new': resizeTF.numpy()})
+            poseT2.execute(resizeTF.numpy(), execute2)
             t1 = time.time()
             print(1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
