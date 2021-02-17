@@ -93,7 +93,7 @@ class pix2pixThreading(threading.Thread):
         return input_image
 
     def getFromModel(self, image):
-        input_image = self.load_from_video(frame)
+        input_image = self.load_from_video(image)
         ext_image = tf.expand_dims(input_image, axis=0)
         generated_image = self.generate_images(generator, ext_image)
         pil_image = tf.keras.preprocessing.image.array_to_img(generated_image)
