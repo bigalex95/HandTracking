@@ -69,7 +69,7 @@ draw_objects = DrawObjects(topology)
 
 # Pix2Pix variables declaration
 # <==================================================================>
-generator = tf.saved_model.load("/model/pix2pixTF")
+generator = tf.saved_model.load("./model/pix2pixTF")
 # <==================================================================>
 
 
