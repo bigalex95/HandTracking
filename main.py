@@ -69,6 +69,23 @@ class poseThreading(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
+
+    def get_id(self):
+        # returns id of the respective thread
+        if hasattr(self, '_thread_id'):
+            return self._thread_id
+        for id, thread in threading._active.items():
+            if thread is self:
+                return id
+
+    def stop(self):
+        thread_id = self.get_id()
+        res = ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id,
+                                                         ctypes.py_object(SystemExit))
+        if res > 1:
+            ctypes.pythonapi.PyThreadState_SetAsyncExc(thread_id, 0)
+            print('Exception raise failure')
+
     def preprocess(self, image):
         global device
         device = torch.device('cuda')
@@ -228,13 +245,17 @@ def main():
             print(1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
                 break
-    except Exception as e:
-        print(e)
-        cv2.destroyAllWindows()
-        vs1.stop()
+   except Exception as e:
+            print(e)
+            cv2.destroyAllWindows()
+            vs1.stop()
+            poseT1.stop()
+            resizeT1.stop()
 
     cv2.destroyAllWindows()
     vs1.stop()
+    poseT1.stop()
+    resizeT1.stop()
 
 
 if __name__ == "__main__":
