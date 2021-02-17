@@ -233,16 +233,26 @@ def main():
         poseT1.start()
         resizeT1 = resizeThreading(224)
         resizeT1.start()
+        vs2 = WebcamVideoStream(src=gstreamer_pipeline(
+            sensor_id=0), device=cv2.CAP_GSTREAMER).start()
+        # poseT2 = poseThreading()
+        # poseT2.start()
+        resizeT2 = resizeThreading(224)
+        resizeT2.start()
         # cap = cv2.VideoCapture(4)
         print('start capturing')
         while True:
             t0 = time.time()
             frame1 = vs1.read()
+            frame2 = vs2.read()
             # _, frame1 = cap.read()
             resizeT1.set(frame1)
             resizeTF1 = resizeT1.getResizeTF()
+            resizeT2.set(frame2)
+            resizeTF2 = resizeT2.getResizeTF()
             # cv2.imshow("frame1", frame1)
             poseT1.execute({'new': resizeTF1.numpy()}, "Execute1")
+            # poseT2.execute({'new': resizeTF2.numpy()}, "Execute2")
             t1 = time.time()
             print(1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
@@ -253,11 +263,17 @@ def main():
         vs1.stop()
         poseT1.stop()
         resizeT1.stop()
+        vs2.stop()
+        # poseT2.stop()
+        resizeT2.stop()
 
     cv2.destroyAllWindows()
     vs1.stop()
     poseT1.stop()
     resizeT1.stop()
+    vs2.stop()
+    # poseT2.stop()
+    resizeT2.stop()
 
 
 if __name__ == "__main__":
