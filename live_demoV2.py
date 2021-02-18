@@ -141,7 +141,6 @@ def preprocess(image):
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     #image = PIL.Image.fromarray((image * 255).astype(np.uint8))
     image = PIL.Image.fromarray((image).astype(np.uint8))
-    #image = PIL.Image.fromarray((image).astype(np.uint8))
     image = transforms.functional.to_tensor(image).to(device)
     image.sub_(mean[:, None, None]).div_(std[:, None, None])
     return image[None, ...]
