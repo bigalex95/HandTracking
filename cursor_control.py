@@ -90,6 +90,10 @@ def gstreamer_pipeline(
 with open('hand_pose.json', 'r') as f:
     hand_pose = json.load(f)
 
+with open('preprocess/gesture.json', 'r') as f:
+    gesture = json.load(f)
+gesture_type = gesture["classes"]
+
 topology = trt_pose.coco.coco_category_to_topology(hand_pose)
 
 num_parts = len(hand_pose['keypoints'])
@@ -263,7 +267,7 @@ def execute(change):
     gesture_joints = gesture[0]
     preprocessdata.prev_queue.append(gesture_joints)
     preprocessdata.prev_queue.pop(0)
-    preprocessdata.print_label(image, preprocessdata.prev_queue)
+    preprocessdata.print_label(image, preprocessdata.prev_queue, gesture_type)
     # draw_joints(image, joints)
     control_cursor(preprocessdata.text, joints)
     cv2.imshow("execute", image)
