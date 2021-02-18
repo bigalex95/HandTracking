@@ -133,32 +133,31 @@ def preprocess(image):
     device = torch.device('cuda')
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     # image = PIL.Image.fromarray((image * 255).astype(np.uint8))
-    image = PIL.Image.fromarray(image).astype(np.uint8))
-    image=transforms.functional.to_tensor(image).to(device)
+    image = PIL.Image.fromarray((image).astype(np.uint8))
+    image = transforms.functional.to_tensor(image).to(device)
     image.sub_(mean[:, None, None]).div_(std[:, None, None])
     return image[None, ...]
 
 
-clf=make_pipeline(StandardScaler(), SVC(gamma='auto', kernel='rbf'))
+clf = make_pipeline(StandardScaler(), SVC(gamma='auto', kernel='rbf'))
 
 
-preprocessdata=preprocessdata(topology, num_parts)
+preprocessdata = preprocessdata(topology, num_parts)
 
 
-svm_train=False
+svm_train = False
 if svm_train:
-    clf, predicted=preprocessdata.trainsvm(
+    clf, predicted = preprocessdata.trainsvm(
         clf, joints_train, joints_test, labels_train, hand.labels_test)
-    filename='svmmodel.sav'
+    filename = 'svmmodel.sav'
     pickle.dump(clf, open(filename, 'wb'))
 else:
-    filename='svmmodel.sav'
-    clf=pickle.load(open(filename, 'rb'))
-
+    filename = 'svmmodel.sav'
+    clf = pickle.load(open(filename, 'rb'))
 
 
 def draw_joints(image, joints):
-    count=0
+    count = 0
     for i in joints:
         if i == [0, 0]:
             count += 1
@@ -174,13 +173,13 @@ def draw_joints(image, joints):
                  (joints[i[1]-1][0], joints[i[1]-1][1]), (0, 255, 0), 1)
 
 
-screenWidth, screenHeight=pyautogui.size()
-p_text='none'
-p_sc=0
-cur_x, cur_y=pyautogui.position()
-fixed_x, fixed_y=pyautogui.position()
-pyautogui.FAILSAFE=False
-t0=time.time()
+screenWidth, screenHeight = pyautogui.size()
+p_text = 'none'
+p_sc = 0
+cur_x, cur_y = pyautogui.position()
+fixed_x, fixed_y = pyautogui.position()
+pyautogui.FAILSAFE = False
+t0 = time.time()
 
 
 def control_cursor(text, joints):
@@ -190,19 +189,19 @@ def control_cursor(text, joints):
     global cur_x
     global cur_y
     global fixed_x,  fixed_y
-    cursor_joint=6
+    cursor_joint = 6
     if p_text != "pan":
         # pyautogui.position()
-        fixed_x=joints[cursor_joint][0]
-        fixed_y=joints[cursor_joint][1]
+        fixed_x = joints[cursor_joint][0]
+        fixed_y = joints[cursor_joint][1]
     if p_text != "click" and text == "click":
         pyautogui.mouseUp(((joints[cursor_joint][0])*screenWidth)/256,
-                          ((joints[cursor_joint][1])*screenHeight)/256, button = 'left')
+                          ((joints[cursor_joint][1])*screenHeight)/256, button='left')
         pyautogui.click()
     if text == "pan":
         if joints[cursor_joint] != [0, 0]:
             pyautogui.mouseUp(((joints[cursor_joint][0])*screenWidth)/256,
-                              ((joints[cursor_joint][1])*screenHeight)/256, button = 'left')
+                              ((joints[cursor_joint][1])*screenHeight)/256, button='left')
 
             pyautogui.moveTo(((joints[cursor_joint][0])*screenWidth) /
                              256, ((joints[cursor_joint][1])*screenHeight)/256)
