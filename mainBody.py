@@ -15,7 +15,7 @@ import torchvision.transforms as transforms
 import PIL.Image
 from trt_pose.draw_objects import DrawObjects
 from trt_pose.parse_objects import ParseObjects
-# from imutils.video import FPS
+from imutils.video import FPS
 
 # TRT Pose Detection variables declaration
 # <==================================================================>
