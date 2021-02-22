@@ -24,7 +24,7 @@ import tensorflow as tf
 import threading
 import ctypes
 import torch2trt
-# from imutils.video import FPS
+from imutils.video import FPS
 
 # TRT Hand Detection variables declaration
 # <==================================================================>
@@ -320,15 +320,15 @@ class resizeThreading(threading.Thread):
             print('Exception raise failure')
 
     def set(self, img):
-        print("SET")
+        # print("SET")
         self.img = img
 
     def getTF(self):
-        print("GET")
+        # print("GET")
         return self.imgTF
 
     def get(self):
-        print("GET")
+        # print("GET")
         return self.img
 
     def getResizeTF(self, size=None):
@@ -398,8 +398,9 @@ def main():
         pix2pixT2.start()
         # cap = cv2.VideoCapture(4)
         print('start capturing')
+        fps = FPS().start()
         while True:
-            t0 = time.time()
+            # t0 = time.time()
             frame1 = vs1.read()
             frame2 = vs2.read()
             # _, frame1 = cap.read()
@@ -412,10 +413,11 @@ def main():
             resizeT1.set(frame1)
             resizeTF1 = resizeT1.getResizeTF()
             poseT1.execute({'new': resizeTF1.numpy()})
-            t1 = time.time()
-            print(1 / (t1 - t0))
+            # t1 = time.time()
+            # print(1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
                 break
+            fps.update()
     except Exception as e:
         print(e)
         cv2.destroyAllWindows()
@@ -429,6 +431,10 @@ def main():
     poseT1.stop()
     resizeT1.stop()
     vs2.stop()
+    # stop the timer and display FPS information
+    fps.stop()
+    print("[INFO] elasped time: {:.2f}".format(fps.elapsed()))
+    print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
 
 if __name__ == "__main__":
