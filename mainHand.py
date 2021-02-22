@@ -1,69 +1,99 @@
+from preprocessdata import preprocessdata
+from sklearn.pipeline import make_pipeline
+from sklearn.svm import SVC
+from sklearn.preprocessing import StandardScaler
+import PIL.Image
+import torchvision.transforms as transforms
+from trt_pose.parse_objects import ParseObjects
+from trt_pose.draw_objects import DrawObjects
+from torch2trt import TRTModule
+import torch
+import trt_pose.models
+import json
+import cv2
+import trt_pose.coco
+import math
+import os
+import numpy as np
+import traitlets
+import pickle
+import pyautogui
+import time
+from threading import Thread
+import tensorflow as tf
 import threading
 import ctypes
-import time
-import cv2
-import tensorflow as tf
-import numpy as np
-
-import json
-import trt_pose.coco
-import trt_pose.models
-import torch
 import torch2trt
-from torch2trt import TRTModule
-import torchvision.transforms as transforms
-import PIL.Image
-from trt_pose.draw_objects import DrawObjects
-from trt_pose.parse_objects import ParseObjects
 # from imutils.video import FPS
 
-# TRT Pose Detection variables declaration
+# TRT Hand Detection variables declaration
 # <==================================================================>
-with open('human_pose.json', 'r') as f:
-    human_pose = json.load(f)
+with open('hand_pose.json', 'r') as f:
+    hand_pose = json.load(f)
 
-topology = trt_pose.coco.coco_category_to_topology(human_pose)
+with open('preprocess/gesture.json', 'r') as f:
+    gesture = json.load(f)
+gesture_type = gesture["classes"]
 
-num_parts = len(human_pose['keypoints'])
-num_links = len(human_pose['skeleton'])
+topology = trt_pose.coco.coco_category_to_topology(hand_pose)
+
+num_parts = len(hand_pose['keypoints'])
+num_links = len(hand_pose['skeleton'])
 
 model = trt_pose.models.resnet18_baseline_att(
     num_parts, 2 * num_links).cuda().eval()
 
-MODEL_WEIGHTS = './model/resnet18_baseline_att_224x224_A_epoch_249.pth'
-
-model.load_state_dict(torch.load(MODEL_WEIGHTS))
 
 WIDTH = 224
 HEIGHT = 224
-
 data = torch.zeros((1, 3, HEIGHT, WIDTH)).cuda()
 
-model_trt = torch2trt.torch2trt(
-    model, [data], fp16_mode=True, max_workspace_size=1 << 25)
+if not os.path.exists('hand_pose_resnet18_att_244_244_trt.pth'):
+    MODEL_WEIGHTS = 'hand_pose_resnet18_att_244_244.pth'
+    model.load_state_dict(torch.load(MODEL_WEIGHTS))
+    import torch2trt
+    model_trt = torch2trt.torch2trt(
+        model, [data], fp16_mode=True, max_workspace_size=1 << 25)
+    OPTIMIZED_MODEL = 'hand_pose_resnet18_att_244_244_trt.pth'
+    torch.save(model_trt.state_dict(), OPTIMIZED_MODEL)
 
-OPTIMIZED_MODEL = './model/resnet18_baseline_att_224x224_A_epoch_249_trt.pth'
 
-torch.save(model_trt.state_dict(), OPTIMIZED_MODEL)
+OPTIMIZED_MODEL = 'hand_pose_resnet18_att_244_244_trt.pth'
 
 model_trt = TRTModule()
 model_trt.load_state_dict(torch.load(OPTIMIZED_MODEL))
 
-t0 = time.time()
-torch.cuda.current_stream().synchronize()
-for i in range(50):
-    y = model_trt(data)
-torch.cuda.current_stream().synchronize()
-t1 = time.time()
 
-print(50.0 / (t1 - t0))
+parse_objects = ParseObjects(
+    topology, cmap_threshold=0.15, link_threshold=0.15)
+draw_objects = DrawObjects(topology)
+
 
 mean = torch.Tensor([0.485, 0.456, 0.406]).cuda()
 std = torch.Tensor([0.229, 0.224, 0.225]).cuda()
 device = torch.device('cuda')
 
-parse_objects = ParseObjects(topology)
-draw_objects = DrawObjects(topology)
+clf = make_pipeline(StandardScaler(), SVC(gamma='auto', kernel='rbf'))
+
+preprocessdata = preprocessdata(topology, num_parts)
+
+svm_train = False
+if svm_train:
+    clf, predicted = preprocessdata.trainsvm(
+        clf, joints_train, joints_test, labels_train, hand.labels_test)
+    filename = 'svmmodel.sav'
+    pickle.dump(clf, open(filename, 'wb'))
+else:
+    filename = 'svmmodel.sav'
+    clf = pickle.load(open(filename, 'rb'))
+
+screenWidth, screenHeight = pyautogui.size()
+p_text = 'none'
+p_sc = 0
+cur_x, cur_y = pyautogui.position()
+fixed_x, fixed_y = pyautogui.position()
+pyautogui.FAILSAFE = False
+t0 = time.time()
 # <==================================================================>
 
 
@@ -123,23 +153,113 @@ class poseThreading(threading.Thread):
     def preprocess(self, image):
         global device
         device = torch.device('cuda')
-        image = image[..., ::-1]
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         # image = PIL.Image.fromarray((image * 255).astype(np.uint8))
         image = PIL.Image.fromarray((image).astype(np.uint8))
-        # image = PIL.Image.fromarray((image).astype(np.uint8))
         image = transforms.functional.to_tensor(image).to(device)
         image.sub_(mean[:, None, None]).div_(std[:, None, None])
         return image[None, ...]
 
-    def execute(self, change, name="execute"):
+    def draw_joints(self, image, joints):
+        count = 0
+        for i in joints:
+            if i == [0, 0]:
+                count += 1
+        if count >= 19:
+            return
+        for i in joints:
+            cv2.circle(image, (i[0], i[1]), 2, (0, 0, 255), 1)
+        cv2.circle(image, (joints[0][0], joints[0][1]), 2, (255, 0, 255), 1)
+        for i in hand_pose['skeleton']:
+            if joints[i[0]-1][0] == 0 or joints[i[1]-1][0] == 0:
+                break
+            cv2.line(image, (joints[i[0]-1][0], joints[i[0]-1][1]),
+                     (joints[i[1]-1][0], joints[i[1]-1][1]), (0, 255, 0), 1)
+
+    def control_cursor(self, text, joints):
+        global p_text
+        global p_sc
+        global t0
+        global cur_x
+        global cur_y
+        global fixed_x,  fixed_y
+        cursor_joint = 6
+        if p_text != "pan":
+            # pyautogui.position()
+            fixed_x = joints[cursor_joint][0]
+            fixed_y = joints[cursor_joint][1]
+        if p_text != "click" and text == "click":
+            pyautogui.mouseUp(((joints[cursor_joint][0])*screenWidth)/256,
+                              ((joints[cursor_joint][1])*screenHeight)/256, button='left')
+            pyautogui.click()
+        if text == "pan":
+            if joints[cursor_joint] != [0, 0]:
+                pyautogui.mouseUp(((joints[cursor_joint][0])*screenWidth)/256,
+                                  ((joints[cursor_joint][1])*screenHeight)/256, button='left')
+
+                pyautogui.moveTo(((joints[cursor_joint][0])*screenWidth) /
+                                 256, ((joints[cursor_joint][1])*screenHeight)/256)
+        if text == "scroll":
+
+            if joints[cursor_joint] != [0, 0] and joints[0] != [0, 0]:
+                pyautogui.mouseUp(((joints[cursor_joint][0])*screenWidth)/256, ((joints[cursor_joint][1])
+                                                                                * screenHeight)/256, button='left')  # to_scroll = (joints[8][1]-joints[0][1])/10
+                to_scroll = (p_sc-joints[cursor_joint][1])
+                if to_scroll > 0:
+                    to_scroll = 1
+                else:
+                    to_scroll = -1
+                pyautogui.scroll(int(to_scroll), x=(
+                    joints[cursor_joint][0]*screenWidth)/256, y=(joints[cursor_joint][1]*screenHeight)/256)
+        if text == "zoom":
+
+            pyautogui.keyDown('ctrl')
+            if joints[cursor_joint] != [0, 0] and joints[0] != [0, 0]:
+                pyautogui.mouseUp(((joints[cursor_joint][0])*screenWidth)/256,
+                                  ((joints[cursor_joint][1])*screenHeight)/256, button='left')
+
+                to_scroll = (p_sc-joints[cursor_joint][1])
+                if to_scroll > 0:
+                    to_scroll = 1
+                else:
+                    to_scroll = -1
+                t1 = time.time()
+                # print(t1-t0)
+                if t1-t0 > 1:
+                    pyautogui.scroll(int(to_scroll), x=(
+                        joints[cursor_joint][0]*screenWidth)/256, y=(joints[cursor_joint][1]*screenHeight)/256)
+                    t0 = time.time()
+            pyautogui.keyUp('ctrl')
+
+        if text == "drag":
+
+            if joints[cursor_joint] != [0, 0]:
+                pyautogui.mouseDown(((joints[cursor_joint][0])*screenWidth)/256,
+                                    ((joints[cursor_joint][1])*screenHeight)/256, button='left')
+
+        p_text = text
+        p_sc = joints[cursor_joint][1]
+
+    def execute(self, change):
         image = change['new']
         data = self.preprocess(image)
         cmap, paf = model_trt(data)
         cmap, paf = cmap.detach().cpu(), paf.detach().cpu()
         # , cmap_threshold=0.15, link_threshold=0.15)
         counts, objects, peaks = parse_objects(cmap, paf)
-        draw_objects(image, counts, objects, peaks)
-        cv2.imshow(name, image)
+        # draw_objects(image, counts, objects, peaks)
+        joints = preprocessdata.joints_inference(image, counts, objects, peaks)
+
+        dist_bn_joints = preprocessdata.find_distance(joints)
+        gesture = clf.predict([dist_bn_joints, [0]*num_parts*num_parts])
+        gesture_joints = gesture[0]
+        preprocessdata.prev_queue.append(gesture_joints)
+        preprocessdata.prev_queue.pop(0)
+        preprocessdata.print_label(
+            image, preprocessdata.prev_queue, gesture_type)
+        # self.draw_joints(image, joints)
+        self.control_cursor(preprocessdata.text, joints)
+        cv2.imshow("execute", image)
 
 
 class WebcamVideoStream:
