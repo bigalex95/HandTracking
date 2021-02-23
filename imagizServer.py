@@ -20,6 +20,7 @@ class serverSocketThread(threading.Thread):
 
 def main():
     serverT1 = serverSocketThread()
+    serverT1.start()
     cv2.namedWindow("frame", cv2.WINDOW_NORMAL)
 
     fps = FPS().start()
@@ -40,7 +41,7 @@ def main():
     print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
     cv2.destroyAllWindows()
-    server.stop()
+    serverT1.join()
 
 
 if __name__ == "__main__":
