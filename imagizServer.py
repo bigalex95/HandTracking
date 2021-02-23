@@ -6,9 +6,9 @@ import threading
 
 
 class serverSocketThread(threading.Thread):
-    def __init__(self):
+    def __init__(self, serverPort=5555):
         threading.Thread.__init__(
-            self, serverPort=5555)
+            self)
         server = imagiz.TCP_Server(port=serverPort)
         server.start()
 

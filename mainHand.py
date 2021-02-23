@@ -103,20 +103,6 @@ generator = tf.saved_model.load("./model/pix2pixTF")
 # <==================================================================>
 
 
-class clientSocketThread(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(
-            self, serverIp="10.42.0.1", serverPort=5555, clientName="client")
-        client = imagiz.TCP_Client(
-            server_ip=serverIp, server_port=serverPort, client_name=clientName)
-        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
-
-    def sendImg(self, img):
-        r, image = cv2.imencode('.jpg', img, encode_param)
-        response = client.send(image)
-        print(response)
-
-
 class pix2pixThreading(threading.Thread):
     def __init__(self, size=256):
         threading.Thread.__init__(self)
