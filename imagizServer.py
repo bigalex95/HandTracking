@@ -9,11 +9,11 @@ class serverSocketThread(threading.Thread):
     def __init__(self, serverPort=5555):
         threading.Thread.__init__(
             self)
-        server = imagiz.TCP_Server(port=serverPort)
-        server.start()
+        self.server = imagiz.TCP_Server(port=serverPort)
+        self.server.start()
 
     def receiveImg(self):
-        message = server.receive()
+        message = self.server.receive()
         frame = cv2.imdecode(message.image, 1)
         return frame
 
