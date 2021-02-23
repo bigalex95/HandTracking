@@ -384,8 +384,10 @@ def gstreamer_pipeline(
 
 def main():
     try:
-        client = imagiz.TCP_Client(
-            server_ip="10.42.0.1", server_port=5550, client_name="cc1")
+        client1 = imagiz.TCP_Client(
+            server_ip="10.42.0.1", server_port=5550, client_name="client1")
+        client2 = imagiz.TCP_Client(
+            server_ip="10.42.0.1", server_port=5550, client_name="client2")
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
 
         vs1 = WebcamVideoStream(src=gstreamer_pipeline(
@@ -415,8 +417,9 @@ def main():
             cv2.imshow("frame1", pix2pixImg1)
             cv2.imshow("frame2", pix2pixImg2)
             _, image = cv2.imencode('.jpg', pix2pixImg1, encode_param)
-            response = client.send(image)
-            print(response)
+            client1.send(image)
+            _, image = cv2.imencode('.jpg', pix2pixImg2, encode_param)
+            client2.send(image)
 
             resizeT1.set(frame1)
             resizeTF1 = resizeT1.getResizeTF()

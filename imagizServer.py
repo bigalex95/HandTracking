@@ -28,7 +28,7 @@ def main():
     print("[INFO] approx. FPS: {:.2f}".format(fps.fps()))
 
     cv2.destroyAllWindows()
-    server.stop()
+    # server.stop()
 
 
 if __name__ == "__main__":
