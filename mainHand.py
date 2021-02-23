@@ -103,6 +103,20 @@ generator = tf.saved_model.load("./model/pix2pixTF")
 # <==================================================================>
 
 
+class clientSocketThread(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(
+            self, serverIp="10.42.0.1", serverPort=5555, clientName="client")
+        client = imagiz.TCP_Client(
+            server_ip=serverIp, server_port=serverPort, client_name=clientName)
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+
+    def sendImg(self, img):
+        r, image = cv2.imencode('.jpg', img, encode_param)
+        response = client.send(image)
+        print(response)
+
+
 class pix2pixThreading(threading.Thread):
     def __init__(self, size=256):
         threading.Thread.__init__(self)
@@ -383,6 +397,9 @@ def gstreamer_pipeline(
 
 def main():
     try:
+        clientT1 = clientSocketThread()
+        clientT1.start()
+
         vs1 = WebcamVideoStream(src=gstreamer_pipeline(
             sensor_id=0), device=cv2.CAP_GSTREAMER).start()
         poseT1 = poseThreading()
@@ -409,6 +426,7 @@ def main():
             pix2pixImg2 = pix2pixT2.getFromModel(frame2)
             cv2.imshow("frame1", pix2pixImg1)
             cv2.imshow("frame2", pix2pixImg2)
+            clientT1.sendImg(pix2pixImg1)
 
             resizeT1.set(frame1)
             resizeTF1 = resizeT1.getResizeTF()
