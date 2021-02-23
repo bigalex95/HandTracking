@@ -250,6 +250,8 @@ class poseThreading(threading.Thread):
         counts, objects, peaks = parse_objects(cmap, paf)
         # draw_objects(image, counts, objects, peaks)
         joints = preprocessdata.joints_inference(image, counts, objects, peaks)
+        print(type(joints))
+        print(joints)
 
         dist_bn_joints = preprocessdata.find_distance(joints)
         gesture = clf.predict([dist_bn_joints, [0]*num_parts*num_parts])

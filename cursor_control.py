@@ -199,7 +199,7 @@ def control_cursor(text, joints):
         # pyautogui.position()
         fixed_x = joints[cursor_joint][0]
         fixed_y = joints[cursor_joint][1]
-    if p_text != "stop" and text == "stop":
+    if p_text != "click" and text == "click":
         pyautogui.mouseUp(((joints[cursor_joint][0])*screenWidth)/256,
                           ((joints[cursor_joint][1])*screenHeight)/256, button='left')
         pyautogui.click()
