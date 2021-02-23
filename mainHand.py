@@ -260,7 +260,7 @@ class poseThreading(threading.Thread):
         preprocessdata.prev_queue.pop(0)
         preprocessdata.print_label(
             image, preprocessdata.prev_queue, gesture_type)
-        # self.draw_joints(image, joints)
+        self.draw_joints(image, joints)
         self.control_cursor(preprocessdata.text, joints)
         cv2.imshow("execute", image)
 
