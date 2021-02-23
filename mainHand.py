@@ -397,9 +397,6 @@ def gstreamer_pipeline(
 
 def main():
     try:
-        clientT1 = clientSocketThread()
-        clientT1.start()
-
         vs1 = WebcamVideoStream(src=gstreamer_pipeline(
             sensor_id=0), device=cv2.CAP_GSTREAMER).start()
         poseT1 = poseThreading()
@@ -426,7 +423,6 @@ def main():
             pix2pixImg2 = pix2pixT2.getFromModel(frame2)
             cv2.imshow("frame1", pix2pixImg1)
             cv2.imshow("frame2", pix2pixImg2)
-            clientT1.sendImg(pix2pixImg1)
 
             resizeT1.set(frame1)
             resizeTF1 = resizeT1.getResizeTF()
