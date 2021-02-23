@@ -422,7 +422,7 @@ def main():
             # client1.send(image)
             # _, image = cv2.imencode('.jpg', pix2pixImg2, encode_param)
             # client2.send(image)
-            frame1 = frame[0:1080, 0:1080]
+            frame1 = frame1[0:1080, 0:1080]
             resizeT1.set(frame1)
             resizeTF1 = resizeT1.getResizeTF()
             poseT1.execute({'new': resizeTF1.numpy()})
