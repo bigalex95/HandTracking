@@ -199,7 +199,7 @@ def control_cursor(text, joints):
         # pyautogui.position()
         fixed_x = joints[cursor_joint][0]
         fixed_y = joints[cursor_joint][1]
-    if p_text != "click" and text == "click":
+    if p_text != "stop" and text == "stop":
         pyautogui.mouseUp(((joints[cursor_joint][0])*screenWidth)/256,
                           ((joints[cursor_joint][1])*screenHeight)/256, button='left')
         pyautogui.click()
@@ -268,7 +268,7 @@ def execute(change):
     preprocessdata.prev_queue.append(gesture_joints)
     preprocessdata.prev_queue.pop(0)
     preprocessdata.print_label(image, preprocessdata.prev_queue, gesture_type)
-    # draw_joints(image, joints)
+    draw_joints(image, joints)
     control_cursor(preprocessdata.text, joints)
     cv2.imshow("execute", image)
 
