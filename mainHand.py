@@ -385,7 +385,7 @@ def gstreamer_pipeline(
 def main():
     try:
         client = imagiz.TCP_Client(
-            server_ip="10.42.0.1", server_port=5555, client_name="cc1")
+            server_ip="10.42.0.1", server_port=5550, client_name="cc1")
         encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
 
         vs1 = WebcamVideoStream(src=gstreamer_pipeline(
