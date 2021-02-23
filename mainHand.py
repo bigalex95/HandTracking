@@ -25,6 +25,7 @@ import threading
 import ctypes
 import torch2trt
 from imutils.video import FPS
+import imagiz
 
 # TRT Hand Detection variables declaration
 # <==================================================================>
@@ -383,6 +384,10 @@ def gstreamer_pipeline(
 
 def main():
     try:
+        client = imagiz.TCP_Client(
+            server_ip="10.42.0.1", server_port=5555, client_name="cc1")
+        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+
         vs1 = WebcamVideoStream(src=gstreamer_pipeline(
             sensor_id=0), device=cv2.CAP_GSTREAMER).start()
         poseT1 = poseThreading()
@@ -409,6 +414,9 @@ def main():
             pix2pixImg2 = pix2pixT2.getFromModel(frame2)
             cv2.imshow("frame1", pix2pixImg1)
             cv2.imshow("frame2", pix2pixImg2)
+            _, image = cv2.imencode('.jpg', pix2pixImg1, encode_param)
+            response = client.send(image)
+            print(response)
 
             resizeT1.set(frame1)
             resizeTF1 = resizeT1.getResizeTF()
