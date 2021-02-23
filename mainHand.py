@@ -385,35 +385,35 @@ def gstreamer_pipeline(
 def main():
     try:
         # client1 = imagiz.TCP_Client(
-            server_ip = "10.42.0.1", server_port = 5550, client_name = "client1")
+        # server_ip = "10.42.0.1", server_port = 5550, client_name = "client1")
         # client2 = imagiz.TCP_Client(
-            server_ip="10.42.0.1", server_port=5550, client_name="client2")
+        # server_ip="10.42.0.1", server_port=5550, client_name="client2")
         # encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
 
-        vs1=WebcamVideoStream(src=gstreamer_pipeline(
-            sensor_id = 0), device=cv2.CAP_GSTREAMER).start()
-        poseT1=poseThreading()
+        vs1 = WebcamVideoStream(src=gstreamer_pipeline(
+            sensor_id=0), device=cv2.CAP_GSTREAMER).start()
+        poseT1 = poseThreading()
         poseT1.start()
-        resizeT1=resizeThreading(224)
+        resizeT1 = resizeThreading(224)
         resizeT1.start()
-        pix2pixT1=pix2pixThreading()
+        pix2pixT1 = pix2pixThreading()
         pix2pixT1.start()
 
-        vs2=WebcamVideoStream(src=gstreamer_pipeline(
-            sensor_id = 1), device=cv2.CAP_GSTREAMER).start()
-        pix2pixT2=pix2pixThreading()
+        vs2 = WebcamVideoStream(src=gstreamer_pipeline(
+            sensor_id=1), device=cv2.CAP_GSTREAMER).start()
+        pix2pixT2 = pix2pixThreading()
         pix2pixT2.start()
         # cap = cv2.VideoCapture(4)
         print('start capturing')
-        fps=FPS().start()
+        fps = FPS().start()
         while True:
             # t0 = time.time()
-            frame1=vs1.read()
-            frame2=vs2.read()
+            frame1 = vs1.read()
+            frame2 = vs2.read()
             # _, frame1 = cap.read()
 
-            pix2pixImg1=pix2pixT1.getFromModel(frame1)
-            pix2pixImg2=pix2pixT2.getFromModel(frame2)
+            pix2pixImg1 = pix2pixT1.getFromModel(frame1)
+            pix2pixImg2 = pix2pixT2.getFromModel(frame2)
             cv2.imshow("frame1", pix2pixImg1)
             cv2.imshow("frame2", pix2pixImg2)
             # _, image = cv2.imencode('.jpg', pix2pixImg1, encode_param)
@@ -422,7 +422,7 @@ def main():
             # client2.send(image)
 
             resizeT1.set(frame1)
-            resizeTF1=resizeT1.getResizeTF()
+            resizeTF1 = resizeT1.getResizeTF()
             poseT1.execute({'new': resizeTF1.numpy()})
             # t1 = time.time()
             # print(1 / (t1 - t0))
