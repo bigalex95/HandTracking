@@ -1,0 +1,3 @@
+https://www.toptal.com/python/beginners-guide-to-concurrency-and-parallelism-in-python
+https://www.bogotobogo.com/python/Multithread/python_multithreading_subclassing_creating_threads.php
+https://www.tutorialspoint.com/python/python_multithreading.htm
