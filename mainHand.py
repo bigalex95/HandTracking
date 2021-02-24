@@ -250,6 +250,8 @@ class poseThreading(threading.Thread):
         counts, objects, peaks = parse_objects(cmap, paf)
         # draw_objects(image, counts, objects, peaks)
         joints = preprocessdata.joints_inference(image, counts, objects, peaks)
+        print(type(joints))
+        print(joints)
 
         dist_bn_joints = preprocessdata.find_distance(joints)
         gesture = clf.predict([dist_bn_joints, [0]*num_parts*num_parts])
@@ -258,7 +260,7 @@ class poseThreading(threading.Thread):
         preprocessdata.prev_queue.pop(0)
         preprocessdata.print_label(
             image, preprocessdata.prev_queue, gesture_type)
-        # self.draw_joints(image, joints)
+        self.draw_joints(image, joints)
         self.control_cursor(preprocessdata.text, joints)
         cv2.imshow("execute", image)
 
@@ -378,17 +380,17 @@ def gstreamer_pipeline(
     )
 
 
-#cv2.namedWindow('execute', cv2.WINDOW_NORMAL)
-#cv2.namedWindow('frame1', cv2.WINDOW_NORMAL)
+# cv2.namedWindow('execute', cv2.WINDOW_NORMAL)
+# cv2.namedWindow('frame1', cv2.WINDOW_NORMAL)
 
 
 def main():
     try:
-        client1 = imagiz.TCP_Client(
-            server_ip="10.42.0.1", server_port=5550, client_name="client1")
-        client2 = imagiz.TCP_Client(
-            server_ip="10.42.0.1", server_port=5550, client_name="client2")
-        encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+        # client1 = imagiz.TCP_Client(
+        # server_ip = "10.42.0.1", server_port = 5550, client_name = "client1")
+        # client2 = imagiz.TCP_Client(
+        # server_ip="10.42.0.1", server_port=5550, client_name="client2")
+        # encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
 
         vs1 = WebcamVideoStream(src=gstreamer_pipeline(
             sensor_id=0), device=cv2.CAP_GSTREAMER).start()
@@ -416,11 +418,11 @@ def main():
             pix2pixImg2 = pix2pixT2.getFromModel(frame2)
             cv2.imshow("frame1", pix2pixImg1)
             cv2.imshow("frame2", pix2pixImg2)
-            _, image = cv2.imencode('.jpg', pix2pixImg1, encode_param)
-            client1.send(image)
-            _, image = cv2.imencode('.jpg', pix2pixImg2, encode_param)
-            client2.send(image)
-
+            # _, image = cv2.imencode('.jpg', pix2pixImg1, encode_param)
+            # client1.send(image)
+            # _, image = cv2.imencode('.jpg', pix2pixImg2, encode_param)
+            # client2.send(image)
+            frame1 = frame1[0:1080, 0:1080]
             resizeT1.set(frame1)
             resizeTF1 = resizeT1.getResizeTF()
             poseT1.execute({'new': resizeTF1.numpy()})

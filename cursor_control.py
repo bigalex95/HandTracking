@@ -268,7 +268,7 @@ def execute(change):
     preprocessdata.prev_queue.append(gesture_joints)
     preprocessdata.prev_queue.pop(0)
     preprocessdata.print_label(image, preprocessdata.prev_queue, gesture_type)
-    # draw_joints(image, joints)
+    draw_joints(image, joints)
     control_cursor(preprocessdata.text, joints)
     cv2.imshow("execute", image)
 
@@ -289,6 +289,7 @@ def main():
             # _, frame1 = cap.read()
             # frame1 = frame1[...,::-1]
             # frame1 = cv2.resize(frame1, (224,224))
+            frame1 = frame1[0:1080, 0:1080]
             image_tf = tf.convert_to_tensor(frame1)
             # print(image_tf.shape)
             resize_tf = tf.image.resize(image_tf, (224, 224))
