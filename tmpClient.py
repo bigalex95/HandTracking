@@ -297,12 +297,12 @@ def main():
     # Defining and start Threads
     threads = []
     global exitFlag
-    queueLock.acquire()
-    frame = cap.read()
-    print(type(frame))
-    inputFrameQueue.put(frame)
-    inputPix2PixQueue.put(frame)
-    queueLock.release()
+    # queueLock.acquire()
+    # frame = cap.read()
+    # print(type(frame))
+    # inputFrameQueue.put(frame)
+    # inputPix2PixQueue.put(frame)
+    # queueLock.release()
 
     reizeTH = myThread("Resize Thread", resize)
     reizeTH.start()
@@ -317,11 +317,13 @@ def main():
     try:
         while True:
             t0 = time.time()
-            queueLock.acquire()
+            # queueLock.acquire()
             frame = cap.read()
-            inputFrameQueue.put(frame)
-            inputPix2PixQueue.put(frame)
-            queueLock.release()
+            if not inputFrameQueue.full():
+                inputFrameQueue.put(frame)
+            if not inputPix2PixQueue.full():
+                inputPix2PixQueue.put(frame)
+            # queueLock.release()
             if not pix2pixQueue.empty():
                 pix2pixQueue.get()
             if not handQueue.empty():
