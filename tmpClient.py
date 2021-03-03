@@ -285,8 +285,10 @@ def main():
             frame = cap.read()
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
-            print(style.MAGENTA + pix2pixQueue.get_nowait())
-            print(style.MAGENTA + handQueue.get_nowait())
+            if not pix2pixQueue.empty():
+                print(style.MAGENTA + pix2pixQueue.get())
+            if not handQueue.empty():
+                print(style.MAGENTA + handQueue.get())
             t1 = time.time()
             print(style.CYAN + 1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
@@ -295,6 +297,12 @@ def main():
         print(style.RED + e)
         cv2.destroyAllWindows()
         cap.stop()
+        # Notify threads it's time to exit
+        exitFlag = 1
+
+        # Wait for all threads to complete
+        for t in threads:
+            t.join()
 
     # Notify threads it's time to exit
     exitFlag = 1
