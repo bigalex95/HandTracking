@@ -299,6 +299,7 @@ def main():
     global exitFlag
     queueLock.acquire()
     frame = cap.read()
+    print(type(frame))
     inputFrameQueue.put(frame)
     inputPix2PixQueue.put(frame)
     queueLock.release()
