@@ -214,8 +214,8 @@ def execute(threadName):
     while not exitFlag:
         if not resizedTFQueue.empty():
             image = resizedTFQueue.get()
-            print(image.shape)
-            print(type(image))
+            print(image.shape, end="\r")
+            print(type(image), end="\r")
             device = torch.device('cuda')
             data = image[..., ::-1]
             # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -242,8 +242,8 @@ def resize(threadName):
     while not exitFlag:
         if not inputFrameQueue.empty():
             image = inputFrameQueue.get()
-            print(image.shape)
-            print(type(image))
+            print(image.shape, end="\r")
+            print(type(image), end="\r")
             imgTF = tf.convert_to_tensor(image)
             imgTF = tf.image.resize(imgTF, (WIDTH, HEIGHT))
             imgTF = tf.cast(imgTF,  dtype=tf.uint8)
@@ -270,8 +270,8 @@ def get_from_model(threadName):
     while not exitFlag:
         if not inputPix2PixQueue.empty():
             image = inputPix2PixQueue.get()
-            print(image.shape)
-            print(type(image))
+            print(image.shape, end="\r")
+            print(type(image), end="\r")
             input_image = tf.cast(image, tf.float32)
             input_image = tf.image.resize(input_image, [SIZE, SIZE],
                                           method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
