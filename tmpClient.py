@@ -123,16 +123,16 @@ WIDTH = 224
 HEIGHT = 224
 data = torch.zeros((1, 3, HEIGHT, WIDTH)).cuda()
 
-if not os.path.exists('hand_pose_resnet18_att_244_244_trt.pth'):
-    MODEL_WEIGHTS = 'hand_pose_resnet18_att_244_244.pth'
+if not os.path.exists('./model/hand_pose_resnet18_att_244_244_trt.pth'):
+    MODEL_WEIGHTS = './model/hand_pose_resnet18_att_244_244.pth'
     model.load_state_dict(torch.load(MODEL_WEIGHTS))
     import torch2trt
     model_trt = torch2trt.torch2trt(
         model, [data], fp16_mode=True, max_workspace_size=1 << 25)
-    OPTIMIZED_MODEL = 'hand_pose_resnet18_att_244_244_trt.pth'
+    OPTIMIZED_MODEL = './model/hand_pose_resnet18_att_244_244_trt.pth'
     torch.save(model_trt.state_dict(), OPTIMIZED_MODEL)
 
-OPTIMIZED_MODEL = 'hand_pose_resnet18_att_244_244_trt.pth'
+OPTIMIZED_MODEL = './model/hand_pose_resnet18_att_244_244_trt.pth'
 
 model_trt = TRTModule()
 model_trt.load_state_dict(torch.load(OPTIMIZED_MODEL))
