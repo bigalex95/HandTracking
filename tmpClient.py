@@ -60,15 +60,14 @@ NORM = 127.5
 
 
 class myThread(threading.Thread):
-    def __init__(self, name, function, q):
+    def __init__(self, name, function):
         threading.Thread.__init__(self)
         self.name = name
         self.function = function
-        self.q = q
 
     def run(self):
         print(style.YELLOW + "Starting " + self.name)
-        self.function(self.name, self.q)
+        self.function(self.name)
         print(style.GREEN + "Exiting " + self.name)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -210,11 +209,11 @@ def preprocess(image):
     return image[None, ...]
 
 
-def execute(threadName, q):
+def execute(threadName):
     global device
     while not exitFlag:
-        if not q.empty():
-            image = q.get_nowait()
+        if not resizedTFQueue.empty():
+            image = resizedTFQueue.get_nowait()
             device = torch.device('cuda')
             data = image[..., ::-1]
             # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -237,10 +236,10 @@ def execute(threadName, q):
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-def resize(threadName, q):
+def resize(threadName):
     while not exitFlag:
-        if not q.empty():
-            image = q.get_nowait()
+        if not inputFrameQueue.empty():
+            image = inputFrameQueue.get_nowait()
             imgTF = tf.convert_to_tensor(image)
             imgTF = tf.image.resize(imgTF, (WIDTH, HEIGHT))
             imgTF = tf.cast(imgTF,  dtype=tf.uint8)
@@ -263,10 +262,10 @@ def load_from_video(image):
     return input_image
 
 
-def get_from_model(threadName, q):
+def get_from_model(threadName):
     while not exitFlag:
-        if not q.empty():
-            image = q.get_nowait()
+        if not inputPix2PixQueue.empty():
+            image = inputPix2PixQueue.get()
             input_image = tf.cast(image, tf.float32)
             input_image = tf.image.resize(input_image, [SIZE, SIZE],
                                           method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
