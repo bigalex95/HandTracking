@@ -292,13 +292,13 @@ def main():
     threads = []
     global exitFlag
 
-    reizeTH = myThread("Resize Thread", resize, inputFrameQueue)
+    reizeTH = myThread("Resize Thread", resize)
     reizeTH.start()
     threads.append(reizeTH)
-    pix2pixTH = myThread("pix2pix Thread", get_from_model, inputPix2PixQueue)
+    pix2pixTH = myThread("pix2pix Thread", get_from_model)
     pix2pixTH.start()
     threads.append(pix2pixTH)
-    handTH = myThread("hand Pose Thread", execute, resizedTFQueue)
+    handTH = myThread("hand Pose Thread", execute)
     handTH.start()
     threads.append(handTH)
 
