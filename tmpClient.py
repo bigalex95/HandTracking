@@ -21,7 +21,7 @@ from preprocessdata import preprocessdata
 import queue
 # Pix2Pix variables declaration
 # <==================================================================>
-generator = tf.saved_model.load("./model/pix2pixTF")
+generator = tf.saved_model.load("./model/pix2pixTF-TRT")
 # <==================================================================>
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
