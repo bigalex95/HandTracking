@@ -128,9 +128,9 @@ def main():
     parser.add_argument('--size', dest='size',
                         help='size of model', type=int, default=256)
     parser.add_argument('--input', dest='input',
-                        help='dir of pix2pix checkpoint', type=str, default='./training_checkpoint')
+                        help='dir of pix2pix checkpoint', type=str, default='./training_checkpoints')
     parser.add_argument('--output', dest='output',
-                        help='dir of SavedModel', type=str, default='./model')
+                        help='dir of SavedModel', type=str, default='./model/pix2pixTF')
     args = parser.parse_args()
     print(args)
 
