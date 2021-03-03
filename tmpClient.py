@@ -223,7 +223,8 @@ def execute(threadName, q):
                 image, counts, objects, peaks)
             # draw_joints(image, joints)
             # cv2.imshow("execute", image)
-            handQueue.put(joints)
+            if not handQueue.full():
+                handQueue.put(joints)
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -235,7 +236,8 @@ def resize(threadName, q):
             imgTF = tf.convert_to_tensor(image)
             imgTF = tf.image.resize(imgTF, (WIDTH, HEIGHT))
             imgTF = tf.cast(imgTF,  dtype=tf.uint8)
-            resizedTFQueue.put(imgTF.numpy())
+            if not resizedTFQueue.full():
+                resizedTFQueue.put(imgTF.numpy())
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -263,7 +265,8 @@ def get_from_model(threadName, q):
             generated_image = generate_images(generator, ext_image)
             pil_image = tf.keras.preprocessing.image.array_to_img(
                 generated_image)
-            pix2pixQueue.put(np.array(pil_image))
+            if not pix2pixQueue.full():
+                pix2pixQueue.put(np.array(pil_image))
 
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -292,22 +295,22 @@ def main():
             frame = cap.read()
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
-            # if not pix2pixQueue.empty():
-            #     pix2pixQueue.get()
-            #     print(style.WHITE + "pix2pixQueue = " +
-            #           str(pix2pixQueue.qsize()))
-            # if not handQueue.empty():
-            #     handQueue.get()
-            #     print(style.WHITE + "handQueue = " + str(handQueue.qsize()))
-            # if not resizedTFQueue.empty():
-            #     print(style.WHITE + "resizedTFQueue = " +
-            #           str(resizedTFQueue.qsize()))
-            # if not inputFrameQueue.empty():
-            #     print(style.WHITE + "inputFrameQueue = " +
-            #           str(inputFrameQueue.qsize()))
-            # if not inputPix2PixQueue.empty():
-            #     print(style.WHITE + "inputPix2PixQueue = " +
-            #           str(inputPix2PixQueue.qsize()))
+            if not pix2pixQueue.empty():
+                pix2pixQueue.get()
+                print(style.WHITE + "pix2pixQueue = " +
+                      str(pix2pixQueue.qsize()))
+            if not handQueue.empty():
+                handQueue.get()
+                print(style.WHITE + "handQueue = " + str(handQueue.qsize()))
+            if not resizedTFQueue.empty():
+                print(style.WHITE + "resizedTFQueue = " +
+                      str(resizedTFQueue.qsize()))
+            if not inputFrameQueue.empty():
+                print(style.WHITE + "inputFrameQueue = " +
+                      str(inputFrameQueue.qsize()))
+            if not inputPix2PixQueue.empty():
+                print(style.WHITE + "inputPix2PixQueue = " +
+                      str(inputPix2PixQueue.qsize()))
             t1 = time.time()
             print(style.BLUE + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
