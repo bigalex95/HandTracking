@@ -286,13 +286,13 @@ def main():
         while True:
             t0 = time.time()
             frame = cap.read()
-            print(style.MAGENTA + str(frame))
+            print(style.RED + str(frame))
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
             if not pix2pixQueue.empty():
-                print(style.MAGENTA + str(pix2pixQueue.get()))
+                print(style.RED + str(pix2pixQueue.get()))
             if not handQueue.empty():
-                print(style.MAGENTA + str(handQueue.get()))
+                print(style.RED + str(handQueue.get()))
             t1 = time.time()
             print(style.CYAN + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
