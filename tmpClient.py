@@ -352,16 +352,16 @@ def main():
         for t in threads:
             t.join()
     except KeyboardInterrupt:
-                cv2.destroyAllWindows()
+        cv2.destroyAllWindows()
         cap.stop()
         # Notify threads it's time to exit
-        exitFlag=1
+        exitFlag = 1
 
         # Wait for all threads to complete
         for t in threads:
             t.join()
     # Notify threads it's time to exit
-    exitFlag=1
+    exitFlag = 1
 
     # Wait for all threads to complete
     for t in threads:
