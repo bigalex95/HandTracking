@@ -214,8 +214,8 @@ def execute(threadName):
     while not exitFlag:
         if not resizedTFQueue.empty():
             image = resizedTFQueue.get()
-            print(image.shape, end="\r")
-            print(type(image), end="\r")
+            print(image.shape)
+            print(type(image))
             device = torch.device('cuda')
             data = image[..., ::-1]
             # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -242,8 +242,8 @@ def resize(threadName):
     while not exitFlag:
         if not inputFrameQueue.empty():
             image = inputFrameQueue.get()
-            print(image.shape, end="\r")
-            print(type(image), end="\r")
+            print(image.shape)
+            print(type(image))
             imgTF = tf.convert_to_tensor(image)
             imgTF = tf.image.resize(imgTF, (WIDTH, HEIGHT))
             imgTF = tf.cast(imgTF,  dtype=tf.uint8)
@@ -270,8 +270,8 @@ def get_from_model(threadName):
     while not exitFlag:
         if not inputPix2PixQueue.empty():
             image = inputPix2PixQueue.get()
-            print(image.shape, end="\r")
-            print(type(image), end="\r")
+            print(image.shape)
+            print(type(image))
             input_image = tf.cast(image, tf.float32)
             input_image = tf.image.resize(input_image, [SIZE, SIZE],
                                           method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
@@ -328,16 +328,15 @@ def main():
                 pix2pixQueue.get()
             if not handQueue.empty():
                 handQueue.get()
-            print(style.WHITE + "pix2pixQueue = " +
-                  str(pix2pixQueue.qsize()), end="\r")
-            print(style.WHITE + "handQueue = " +
-                  str(handQueue.qsize()), end="\r")
-            print(style.WHITE + "resizedTFQueue = " +
-                  str(resizedTFQueue.qsize()), end="\r")
-            print(style.WHITE + "inputFrameQueue = " +
-                  str(inputFrameQueue.qsize()), end="\r")
-            print(style.WHITE + "inputPix2PixQueue = " +
-                  str(inputPix2PixQueue.qsize()), end="\r")
+            print(style.YELLOW + "pix2pixQueue = " +
+                  str(pix2pixQueue.qsize()))
+            print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
+            print(style.YELLOW + "resizedTFQueue = " +
+                  str(resizedTFQueue.qsize()))
+            print(style.YELLOW + "inputFrameQueue = " +
+                  str(inputFrameQueue.qsize()))
+            print(style.YELLOW + "inputPix2PixQueue = " +
+                  str(inputPix2PixQueue.qsize()))
             t1 = time.time()
             print(style.BLUE + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
@@ -353,16 +352,16 @@ def main():
         for t in threads:
             t.join()
     except KeyboardInterrupt:
-        cv2.destroyAllWindows()
+                cv2.destroyAllWindows()
         cap.stop()
         # Notify threads it's time to exit
-        exitFlag = 1
+        exitFlag=1
 
         # Wait for all threads to complete
         for t in threads:
             t.join()
     # Notify threads it's time to exit
-    exitFlag = 1
+    exitFlag=1
 
     # Wait for all threads to complete
     for t in threads:
