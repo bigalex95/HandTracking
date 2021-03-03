@@ -19,6 +19,10 @@ from trt_pose.parse_objects import ParseObjects
 import os
 from preprocessdata import preprocessdata
 import queue
+# Pix2Pix variables declaration
+# <==================================================================>
+generator = tf.saved_model.load("./model/pix2pixTF")
+# <==================================================================>
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
 queueLock = threading.Lock()
@@ -112,6 +116,8 @@ def gstreamer_pipeline(
     )
 
 
+# TRT Pose Detection variables declaration
+# <==================================================================>
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 with open('hand_pose.json', 'r') as f:
     hand_pose = json.load(f)
@@ -245,10 +251,10 @@ def main():
     reizeTH = myThread("Resize Thread", resize, inputFrameQueue)
     reizeTH.start()
     threads.append(reizeTH)
-    pix2pixTH = myThread("Resize Thread", get_from_model, inputPix2PixQueue)
+    pix2pixTH = myThread("pix2pix Thread", get_from_model, inputPix2PixQueue)
     pix2pixTH.start()
     threads.append(pix2pixTH)
-    handTH = myThread("Resize Thread", execute, resizedTFQueue)
+    handTH = myThread("hand Pose Thread", execute, resizedTFQueue)
     handTH.start()
     threads.append(handTH)
 
