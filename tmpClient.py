@@ -339,7 +339,7 @@ def main():
             print(style.WHITE + "inputPix2PixQueue = " +
                   str(inputPix2PixQueue.qsize()), end="\r")
             t1 = time.time()
-            print(style.BLUE + str(1 / (t1 - t0)), end="\r")
+            print(style.BLUE + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
                 break
     except Exception as e:
