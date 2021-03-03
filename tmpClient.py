@@ -329,16 +329,16 @@ def main():
             if not handQueue.empty():
                 handQueue.get()
             print(style.WHITE + "pix2pixQueue = " +
-                  str(pix2pixQueue.qsize()))
-            print(style.WHITE + "handQueue = " + str(handQueue.qsize()))
+                  str(pix2pixQueue.qsize()), end="\r"))
+            print(style.WHITE + "handQueue = " + str(handQueue.qsize()), end = "\r"))
             print(style.WHITE + "resizedTFQueue = " +
-                  str(resizedTFQueue.qsize()))
+                  str(resizedTFQueue.qsize()), end="\r"))
             print(style.WHITE + "inputFrameQueue = " +
-                  str(inputFrameQueue.qsize()))
+                  str(inputFrameQueue.qsize()), end="\r"))
             print(style.WHITE + "inputPix2PixQueue = " +
-                  str(inputPix2PixQueue.qsize()))
-            t1 = time.time()
-            print(style.BLUE + str(1 / (t1 - t0)))
+                  str(inputPix2PixQueue.qsize()), end="\r"))
+            t1=time.time()
+            print(style.BLUE + str(1 / (t1 - t0)), end="\r"))
             if cv2.waitKey(1) == 27:
                 break
     except Exception as e:
@@ -346,14 +346,14 @@ def main():
         cv2.destroyAllWindows()
         cap.stop()
         # Notify threads it's time to exit
-        exitFlag = 1
+        exitFlag=1
 
         # Wait for all threads to complete
         for t in threads:
             t.join()
 
     # Notify threads it's time to exit
-    exitFlag = 1
+    exitFlag=1
 
     # Wait for all threads to complete
     for t in threads:
