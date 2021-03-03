@@ -297,6 +297,11 @@ def main():
     # Defining and start Threads
     threads = []
     global exitFlag
+    queueLock.acquire()
+    frame = cap.read()
+    inputFrameQueue.put(frame)
+    inputPix2PixQueue.put(frame)
+    queueLock.release()
 
     reizeTH = myThread("Resize Thread", resize)
     reizeTH.start()
