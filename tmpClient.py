@@ -324,19 +324,19 @@ def main():
             if not inputPix2PixQueue.full():
                 inputPix2PixQueue.put(frame)
             # queueLock.release()
-            if not pix2pixQueue.empty():
+            print(style.YELLOW + "inputFrameQueue = " +
+                  str(inputFrameQueue.qsize()))
+            print(style.YELLOW + "inputPix2PixQueue = " +
+                  str(inputPix2PixQueue.qsize()))
+            if pix2pixQueue.qsize() == 3:
                 pix2pixQueue.get()
-            if not handQueue.empty():
+            if handQueue.qsize() == 3:
                 handQueue.get()
             print(style.YELLOW + "pix2pixQueue = " +
                   str(pix2pixQueue.qsize()))
             print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
             print(style.YELLOW + "resizedTFQueue = " +
                   str(resizedTFQueue.qsize()))
-            print(style.YELLOW + "inputFrameQueue = " +
-                  str(inputFrameQueue.qsize()))
-            print(style.YELLOW + "inputPix2PixQueue = " +
-                  str(inputPix2PixQueue.qsize()))
             t1 = time.time()
             print(style.BLUE + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
