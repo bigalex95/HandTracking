@@ -19,6 +19,27 @@ from trt_pose.parse_objects import ParseObjects
 import os
 from preprocessdata import preprocessdata
 import queue
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+# System call
+os.system("")
+
+# Class of different styles
+
+
+class style():
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+    UNDERLINE = '\033[4m'
+    RESET = '\033[0m'
+
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 # Pix2Pix variables declaration
 # <==================================================================>
 generator = tf.saved_model.load("./model/pix2pixTF-TRT")
@@ -46,9 +67,9 @@ class myThread(threading.Thread):
         self.q = q
 
     def run(self):
-        print("Starting " + self.name)
+        print(style.YELLOW + "Starting " + self.name)
         self.function(self.name, self.q)
-        print("Exiting " + self.name)
+        print(style.GREEN + "Exiting " + self.name)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
@@ -264,14 +285,14 @@ def main():
             frame = cap.read()
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
-            print(pix2pixQueue.get_nowait())
-            print(handQueue.get_nowait())
+            print(style.MAGENTA + pix2pixQueue.get_nowait())
+            print(style.MAGENTA + handQueue.get_nowait())
             t1 = time.time()
-            print(1 / (t1 - t0))
+            print(style.CYAN + 1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
                 break
     except Exception as e:
-        print(e)
+        print(style.RED + e)
         cv2.destroyAllWindows()
         cap.stop()
 
@@ -283,7 +304,7 @@ def main():
         t.join()
     cap.stop()
     cv2.destroyAllWindows()
-    print("Exiting Main Thread")
+    print(style.GREEN + "Exiting Main Thread")
 
 
 if __name__ == "__main__":
