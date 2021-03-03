@@ -311,9 +311,11 @@ def main():
     try:
         while True:
             t0 = time.time()
+            queueLock.acquire()
             frame = cap.read()
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
+            queueLock.release()
             if not pix2pixQueue.empty():
                 pix2pixQueue.get()
             if not handQueue.empty():
