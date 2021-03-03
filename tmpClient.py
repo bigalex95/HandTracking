@@ -212,7 +212,7 @@ def execute(threadName, q):
     while not exitFlag:
         if not q.empty():
             image = q.get()
-            data = preprocess(q.get())
+            data = preprocess(image)
             cmap, paf = model_trt(data)
             cmap, paf = cmap.detach().cpu(), paf.detach().cpu()
             counts, objects, peaks = parse_objects(cmap, paf)
@@ -228,7 +228,8 @@ def execute(threadName, q):
 def resize(threadName, q):
     while not exitFlag:
         if not q.empty():
-            imgTF = tf.convert_to_tensor(q.get())
+            image = q.get()
+            imgTF = tf.convert_to_tensor(image)
             imgTF = tf.image.resize(imgTF, (WIDTH, HEIGHT))
             imgTF = tf.cast(imgTF,  dtype=tf.uint8)
             resizedTFQueue.put(imgTF.numpy())
@@ -252,7 +253,8 @@ def load_from_video(image):
 def get_from_model(threadName, q):
     while not exitFlag:
         if not q.empty():
-            input_image = load_from_video(q.get())
+            image = q.get()
+            input_image = load_from_video(image)
             ext_image = tf.expand_dims(input_image, axis=0)
             generated_image = generate_images(generator, ext_image)
             pil_image = tf.keras.preprocessing.image.array_to_img(
