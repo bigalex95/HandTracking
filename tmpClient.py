@@ -254,6 +254,7 @@ def load_from_video(image):
 def get_from_model(threadName, q):
     while not exitFlag:
         if not q.empty():
+            print("pix2pix")
             image = q.get()
             input_image = load_from_video(image)
             ext_image = tf.expand_dims(input_image, axis=0)
@@ -289,22 +290,22 @@ def main():
             frame = cap.read()
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
-            if not pix2pixQueue.empty():
-                pix2pixQueue.get()
-                print(style.WHITE + "pix2pixQueue = " +
-                      str(pix2pixQueue.qsize()))
-            if not handQueue.empty():
-                handQueue.get()
-                print(style.WHITE + "handQueue = " + str(handQueue.qsize()))
-            if not resizedTFQueue.empty():
-                print(style.WHITE + "resizedTFQueue = " +
-                      str(resizedTFQueue.qsize()))
-            if not inputFrameQueue.empty():
-                print(style.WHITE + "inputFrameQueue = " +
-                      str(inputFrameQueue.qsize()))
-            if not inputPix2PixQueue.empty():
-                print(style.WHITE + "inputPix2PixQueue = " +
-                      str(inputPix2PixQueue.qsize()))
+            # if not pix2pixQueue.empty():
+            #     pix2pixQueue.get()
+            #     print(style.WHITE + "pix2pixQueue = " +
+            #           str(pix2pixQueue.qsize()))
+            # if not handQueue.empty():
+            #     handQueue.get()
+            #     print(style.WHITE + "handQueue = " + str(handQueue.qsize()))
+            # if not resizedTFQueue.empty():
+            #     print(style.WHITE + "resizedTFQueue = " +
+            #           str(resizedTFQueue.qsize()))
+            # if not inputFrameQueue.empty():
+            #     print(style.WHITE + "inputFrameQueue = " +
+            #           str(inputFrameQueue.qsize()))
+            # if not inputPix2PixQueue.empty():
+            #     print(style.WHITE + "inputPix2PixQueue = " +
+            #           str(inputPix2PixQueue.qsize()))
             t1 = time.time()
             print(style.BLUE + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
