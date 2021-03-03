@@ -231,7 +231,6 @@ def get_from_model(threadName, q):
 
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-cv2.namedWindow('test', cv2.WINDOW_NORMAL)
 
 
 def main():
@@ -257,6 +256,8 @@ def main():
             frame = cap.read()
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
+            print(pix2pixQueue.get_nowait())
+            print(handQueue.get_nowait())
             t1 = time.time()
             print(1 / (t1 - t0))
             if cv2.waitKey(1) == 27:
