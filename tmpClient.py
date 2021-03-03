@@ -211,6 +211,7 @@ def preprocess(image):
 def execute(threadName, q):
     while not exitFlag:
         if not q.empty():
+            print(threadName)
             image = q.get()
             data = preprocess(image)
             cmap, paf = model_trt(data)
