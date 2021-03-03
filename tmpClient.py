@@ -291,10 +291,12 @@ def main():
             inputPix2PixQueue.put(frame)
             if not pix2pixQueue.empty():
                 print(style.RED + str(pix2pixQueue.get()))
+                print(style.RED + str(pix2pixQueue.qsize()))
             if not handQueue.empty():
                 print(style.RED + str(handQueue.get()))
+                print(style.RED + str(handQueue.qsize()))
             t1 = time.time()
-            print(style.CYAN + str(1 / (t1 - t0)))
+            print(style.BLUE + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
                 break
     except Exception as e:
