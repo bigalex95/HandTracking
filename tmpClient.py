@@ -290,11 +290,17 @@ def main():
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
             if not pix2pixQueue.empty():
-                print(style.RED + str(pix2pixQueue.get()))
-                print(style.RED + str(pix2pixQueue.qsize()))
+                pix2pixQueue.get()
+                print(style.WHITE + str(pix2pixQueue.qsize()))
             if not handQueue.empty():
-                print(style.RED + str(handQueue.get()))
-                print(style.RED + str(handQueue.qsize()))
+                handQueue.get()
+                print(style.WHITE + str(handQueue.qsize()))
+            if not resizedTFQueue.empty():
+                print(style.WHITE + str(resizedTFQueue.qsize()))
+            if not inputFrameQueue.empty():
+                print(style.WHITE + str(inputFrameQueue.qsize()))
+            if not inputPix2PixQueue.empty():
+                print(style.WHITE + str(inputPix2PixQueue.qsize()))
             t1 = time.time()
             print(style.BLUE + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
