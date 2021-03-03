@@ -286,7 +286,6 @@ def main():
         while True:
             t0 = time.time()
             frame = cap.read()
-            print(style.RED + str(frame))
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
             if not pix2pixQueue.empty():
