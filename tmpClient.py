@@ -211,12 +211,20 @@ def preprocess(image):
 
 
 def execute(threadName, q):
+    global device
     while not exitFlag:
         if not q.empty():
-            print(threadName)
-            image = q.get()
-            data = preprocess(image)
-            cmap, paf = model_trt(data)
+            image = q.get_nowait()
+            device = torch.device('cuda')
+            data = image[..., ::-1]
+            # image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            # image = PIL.Image.fromarray((image * 255).astype(np.uint8))
+            data = PIL.Image.fromarray((data).astype(np.uint8))
+            data = transforms.functional.to_tensor(data).to(device)
+            data.sub_(mean[:, None, None]).div_(std[:, None, None])
+            # data = preprocess(image)
+            cmap, paf = model_trt(data[None, ...])
+            # cmap, paf = model_trt(data)
             cmap, paf = cmap.detach().cpu(), paf.detach().cpu()
             counts, objects, peaks = parse_objects(cmap, paf)
             joints = preprocessdata.joints_inference(
@@ -232,7 +240,7 @@ def execute(threadName, q):
 def resize(threadName, q):
     while not exitFlag:
         if not q.empty():
-            image = q.get()
+            image = q.get_nowait()
             imgTF = tf.convert_to_tensor(image)
             imgTF = tf.image.resize(imgTF, (WIDTH, HEIGHT))
             imgTF = tf.cast(imgTF,  dtype=tf.uint8)
@@ -258,13 +266,19 @@ def load_from_video(image):
 def get_from_model(threadName, q):
     while not exitFlag:
         if not q.empty():
-            print("pix2pix")
-            image = q.get()
-            input_image = load_from_video(image)
+            image = q.get_nowait()
+            input_image = tf.cast(image, tf.float32)
+            input_image = tf.image.resize(input_image, [SIZE, SIZE],
+                                          method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+            input_image = (input_image / NORM) - 1
+            # input_image = load_from_video(image)
             ext_image = tf.expand_dims(input_image, axis=0)
-            generated_image = generate_images(generator, ext_image)
+            prediction = generator(ext_image, training=True)
+            # generated_image = generate_images(generator, ext_image)
+            # pil_image = tf.keras.preprocessing.image.array_to_img(
+            #     generated_image)
             pil_image = tf.keras.preprocessing.image.array_to_img(
-                generated_image)
+                prediction[0])
             if not pix2pixQueue.full():
                 pix2pixQueue.put(np.array(pil_image))
 
