@@ -47,11 +47,11 @@ generator = tf.saved_model.load("./model/pix2pixTF-TRT")
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
 queueLock = threading.Lock()
-inputPix2PixQueue = queue.Queue(100)
-inputFrameQueue = queue.Queue(100)
-pix2pixQueue = queue.Queue(100)
-resizedTFQueue = queue.Queue(100)
-handQueue = queue.Queue(100)
+inputPix2PixQueue = queue.Queue(10)
+inputFrameQueue = queue.Queue(10)
+pix2pixQueue = queue.Queue(10)
+resizedTFQueue = queue.Queue(10)
+handQueue = queue.Queue(10)
 # pix2pixFrame = np.zeros((256, 256, 1))
 # gray = np.zeros((480, 640, 1))
 SIZE = 256
@@ -297,20 +297,17 @@ def main():
             inputPix2PixQueue.put(frame)
             if not pix2pixQueue.empty():
                 pix2pixQueue.get()
-                print(style.WHITE + "pix2pixQueue = " +
-                      str(pix2pixQueue.qsize()))
             if not handQueue.empty():
                 handQueue.get()
-                print(style.WHITE + "handQueue = " + str(handQueue.qsize()))
-            if not resizedTFQueue.empty():
-                print(style.WHITE + "resizedTFQueue = " +
-                      str(resizedTFQueue.qsize()))
-            if not inputFrameQueue.empty():
-                print(style.WHITE + "inputFrameQueue = " +
-                      str(inputFrameQueue.qsize()))
-            if not inputPix2PixQueue.empty():
-                print(style.WHITE + "inputPix2PixQueue = " +
-                      str(inputPix2PixQueue.qsize()))
+            print(style.WHITE + "pix2pixQueue = " +
+                  str(pix2pixQueue.qsize()))
+            print(style.WHITE + "handQueue = " + str(handQueue.qsize()))
+            print(style.WHITE + "resizedTFQueue = " +
+                  str(resizedTFQueue.qsize()))
+            print(style.WHITE + "inputFrameQueue = " +
+                  str(inputFrameQueue.qsize()))
+            print(style.WHITE + "inputPix2PixQueue = " +
+                  str(inputPix2PixQueue.qsize()))
             t1 = time.time()
             print(style.BLUE + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
