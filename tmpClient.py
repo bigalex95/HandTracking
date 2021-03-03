@@ -211,6 +211,7 @@ def preprocess(image):
 def execute(threadName, q):
     while not exitFlag:
         if not q.empty():
+            image = q.get()
             data = preprocess(q.get())
             cmap, paf = model_trt(data)
             cmap, paf = cmap.detach().cpu(), paf.detach().cpu()
@@ -286,15 +287,15 @@ def main():
             inputFrameQueue.put(frame)
             inputPix2PixQueue.put(frame)
             if not pix2pixQueue.empty():
-                print(style.MAGENTA + pix2pixQueue.get())
+                print(style.MAGENTA + str(pix2pixQueue.get()))
             if not handQueue.empty():
-                print(style.MAGENTA + handQueue.get())
+                print(style.MAGENTA + str(handQueue.get()))
             t1 = time.time()
-            print(style.CYAN + 1 / (t1 - t0))
+            print(style.CYAN + str(1 / (t1 - t0)))
             if cv2.waitKey(1) == 27:
                 break
     except Exception as e:
-        print(style.RED + e)
+        print(style.RED + str(e))
         cv2.destroyAllWindows()
         cap.stop()
         # Notify threads it's time to exit
