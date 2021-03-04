@@ -329,30 +329,29 @@ def main():
                   str(inputFrameQueue.qsize()))
             print(style.YELLOW + "inputPix2PixQueue = " +
                   str(inputPix2PixQueue.qsize()))
-            if pix2pixQueue.qsize() == 3:
+            if not pix2pixQueue.empty():
                 pix2pixQueue.get()
                 t1 = time.time()
                 print(style.BLUE + "inputFrameQueue = " + str(1 / (t1 - t0)))
                 t0 = time.time()
-            if handQueue.qsize() == 3:
+            if not handQueue.empty():
                 handQueue.get()
-                t3 = time.time()
-                print(style.BLUE + "inputFrameQueue = " + str(1 / (t3 - t2)))
-                t2 = time.time()
-            print(style.YELLOW + "pix2pixQueue = " +
-                  str(pix2pixQueue.qsize()))
-            print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
-            print(style.YELLOW + "resizedTFQueue = " +
-                  str(resizedTFQueue.qsize()))
-            if cv2.waitKey(1) == 27:
-                break
+            #     t3 = time.time()
+            #     print(style.BLUE + "inputFrameQueue = " + str(1 / (t3 - t2)))
+            #     t2 = time.time()
+            # print(style.YELLOW + "pix2pixQueue = " +
+            #       str(pix2pixQueue.qsize()))
+            # print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
+            # print(style.YELLOW + "resizedTFQueue = " +
+            #       str(resizedTFQueue.qsize()))
+            # if cv2.waitKey(1) == 27:
+            #     break
     except Exception as e:
         print(style.RED + str(e))
         cv2.destroyAllWindows()
         cap.stop()
         # Notify threads it's time to exit
         exitFlag = 1
-
         # Wait for all threads to complete
         for t in threads:
             t.join()
@@ -361,13 +360,12 @@ def main():
         cap.stop()
         # Notify threads it's time to exit
         exitFlag = 1
-
         # Wait for all threads to complete
         for t in threads:
             t.join()
+
     # Notify threads it's time to exit
     exitFlag = 1
-
     # Wait for all threads to complete
     for t in threads:
         t.join()
