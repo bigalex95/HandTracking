@@ -332,7 +332,7 @@ def main():
             if not pix2pixQueue.empty():
                 pix2pixQueue.get()
                 t1 = time.time()
-                print(style.BLUE + "inputFrameQueue = " + str(1 / (t1 - t0)))
+                print(style.BLUE + "inputPix2PixQueue = " + str(1 / (t1 - t0)))
                 t0 = time.time()
             if not handQueue.empty():
                 handQueue.get()
