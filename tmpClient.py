@@ -313,7 +313,8 @@ def main():
     handTH = myThread("hand Pose Thread", execute)
     handTH.start()
     threads.append(handTH)
-
+    t2 = time.time()
+    t0 = time.time()
     try:
         while True:
 
