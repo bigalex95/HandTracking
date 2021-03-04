@@ -325,14 +325,15 @@ def main():
             if not inputPix2PixQueue.full():
                 inputPix2PixQueue.put(frame)
             # queueLock.release()
-            print(style.YELLOW + "inputFrameQueue = " +
-                  str(inputFrameQueue.qsize()))
-            print(style.YELLOW + "inputPix2PixQueue = " +
-                  str(inputPix2PixQueue.qsize()))
+            # print(style.YELLOW + "inputFrameQueue = " +
+            #       str(inputFrameQueue.qsize()))
+            # print(style.YELLOW + "inputPix2PixQueue = " +
+            #       str(inputPix2PixQueue.qsize()))
             if not pix2pixQueue.empty():
                 pix2pixQueue.get()
                 t1 = time.time()
-                print(style.BLUE + "inputPix2PixQueue = " + str(1 / (t1 - t0)))
+                print(style.BLUE + "inputPix2PixQueue = " +
+                      str(1 / (t1 - t0)), end="/r")
                 t0 = time.time()
             if not handQueue.empty():
                 handQueue.get()
