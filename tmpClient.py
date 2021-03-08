@@ -1,5 +1,5 @@
 import threading
-import ctypes
+import multiprocessing
 import time
 import cv2
 import tensorflow as tf
@@ -19,6 +19,7 @@ from trt_pose.parse_objects import ParseObjects
 import os
 from preprocessdata import preprocessdata
 import queue
+import imagiz
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 # System call
 os.system("")
@@ -47,9 +48,11 @@ generator = tf.saved_model.load("./model/pix2pixTF-TRT")
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
 queueLock = threading.Lock()
-inputPix2PixQueue = queue.Queue(10)
+inputPix2PixQueue1 = queue.Queue(10)
+inputPix2PixQueue2 = queue.Queue(10)
 inputFrameQueue = queue.Queue(10)
-pix2pixQueue = queue.Queue(10)
+pix2pixQueue1 = queue.Queue(10)
+pix2pixQueue2 = queue.Queue(10)
 resizedTFQueue = queue.Queue(10)
 handQueue = queue.Queue(10)
 # pix2pixFrame = np.zeros((256, 256, 1))
@@ -60,14 +63,16 @@ NORM = 127.5
 
 
 class myThread(threading.Thread):
-    def __init__(self, name, function):
+    def __init__(self, name, function, iq, oq=None):
         threading.Thread.__init__(self)
         self.name = name
         self.function = function
+        self.iq = iq
+        self.oq = oq
 
     def run(self):
         print(style.YELLOW + "Starting " + self.name)
-        self.function(self.name)
+        self.function(self.iq, self.oq)
         print(style.GREEN + "Exiting " + self.name)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -209,11 +214,11 @@ def preprocess(image):
     return image[None, ...]
 
 
-def execute(threadName):
+def execute(iq, oq):
     global device
     while not exitFlag:
-        if not resizedTFQueue.empty():
-            image = resizedTFQueue.get()
+        if not iq.empty():
+            image = iq.get()
             # print(image.shape)
             # print(type(image))
             device = torch.device('cuda')
@@ -232,23 +237,23 @@ def execute(threadName):
                 image, counts, objects, peaks)
             # draw_joints(image, joints)
             # cv2.imshow("execute", image)
-            if not handQueue.full():
-                handQueue.put(joints)
+            if not oq.full():
+                oq.put(joints)
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-def resize(threadName):
+def resize(iq, oq):
     while not exitFlag:
-        if not inputFrameQueue.empty():
-            image = inputFrameQueue.get()
+        if not iq.empty():
+            image = iq.get()
             # print(image.shape)
             # print(type(image))
             imgTF = tf.convert_to_tensor(image)
             imgTF = tf.image.resize(imgTF, (WIDTH, HEIGHT))
             imgTF = tf.cast(imgTF,  dtype=tf.uint8)
-            if not resizedTFQueue.full():
-                resizedTFQueue.put(imgTF.numpy())
+            if not oq.full():
+                oq.put(imgTF.numpy())
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -266,10 +271,10 @@ def load_from_video(image):
     return input_image
 
 
-def get_from_model(threadName):
+def get_from_model(iq, oq):
     while not exitFlag:
-        if not inputPix2PixQueue.empty():
-            image = inputPix2PixQueue.get()
+        if not iq.empty():
+            image = iq.get()
             # print(image.shape)
             # print(type(image))
             input_image = tf.cast(image, tf.float32)
@@ -284,16 +289,18 @@ def get_from_model(threadName):
             #     generated_image)
             pil_image = tf.keras.preprocessing.image.array_to_img(
                 prediction[0])
-            if not pix2pixQueue.full():
-                pix2pixQueue.put(np.array(pil_image))
+            if not oq.full():
+                oq.put(np.array(pil_image))
 
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
 def main():
-    cap = WebcamVideoStream(src=gstreamer_pipeline(
+    cap1 = WebcamVideoStream(src=gstreamer_pipeline(
         sensor_id=0), device=cv2.CAP_GSTREAMER).start()
+    cap2 = WebcamVideoStream(src=gstreamer_pipeline(
+        sensor_id=1), device=cv2.CAP_GSTREAMER).start()
     # Defining and start Threads
     threads = []
     global exitFlag
@@ -304,39 +311,64 @@ def main():
     # inputPix2PixQueue.put(frame)
     # queueLock.release()
 
-    reizeTH = myThread("Resize Thread", resize)
+    reizeTH = myThread("Resize Thread", resize,
+                       inputFrameQueue, resizedTFQueue)
     reizeTH.start()
     threads.append(reizeTH)
-    pix2pixTH = myThread("pix2pix Thread", get_from_model)
-    pix2pixTH.start()
-    threads.append(pix2pixTH)
-    handTH = myThread("hand Pose Thread", execute)
+    pix2pixTH1 = myThread(
+        "pix2pix1 Thread", get_from_model, inputPix2PixQueue1, pix2pixQueue1)
+    pix2pixTH1.start()
+    threads.append(pix2pixTH1)
+    pix2pixTH2 = myThread(
+        "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, pix2pixQueue2)
+    pix2pixTH2.start()
+    threads.append(pix2pixTH2)
+    handTH = myThread("hand Pose Thread", execute, resizedTFQueue, handQueue)
     handTH.start()
     threads.append(handTH)
-    t2 = time.time()
-    t0 = time.time()
+
+    client1 = imagiz.TCP_Client(
+        server_ip='10.42.0.1', server_port=5550, client_name='cc1')
+    # client2 = imagiz.TCP_Client(
+    #     server_ip='10.42.0.1', server_port=5551, client_name='cc2')
+    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+
     try:
         while True:
 
             # queueLock.acquire()
-            frame = cap.read()
+            frame1 = cap1.read()
+            frame2 = cap2.read()
             if not inputFrameQueue.full():
-                inputFrameQueue.put(frame)
-            if not inputPix2PixQueue.full():
-                inputPix2PixQueue.put(frame)
+                inputFrameQueue.put(frame1)
+
+            if not inputPix2PixQueue1.full():
+                inputPix2PixQueue1.put(frame1)
+
+            if not inputPix2PixQueue2.full():
+                inputPix2PixQueue2.put(frame2)
+
             # queueLock.release()
             # print(style.YELLOW + "inputFrameQueue = " +
             #       str(inputFrameQueue.qsize()))
             # print(style.YELLOW + "inputPix2PixQueue = " +
             #       str(inputPix2PixQueue.qsize()))
-            if not pix2pixQueue.empty():
-                pix2pixQueue.get()
-                t1 = time.time()
-                print(style.BLUE + "inputPix2PixQueue = " +
-                      str(1 / (t1 - t0)), end="/r")
-                t0 = time.time()
+            if not pix2pixQueue1.empty():
+                img1 = pix2pixQueue1.get()
+                _, image1 = cv2.imencode('.jpg', img1, encode_param)
+                response = client1.send(image1)
+                print(style.YELLOW + response)
+            if not pix2pixQueue2.empty():
+                img2 = pix2pixQueue2.get()
+                _, image2 = cv2.imencode('.jpg', img2, encode_param)
+                # response = client2.send(image2)
+                # print(style.BLUE + response)
             if not handQueue.empty():
-                handQueue.get()
+                jointsTmp = handQueue.get()
+                # _, jointsTmpReady = cv2.imencode(
+                #     '.jpg', jointsTmp, encode_param)
+                # response = client1.send(jointsTmpReady)
+                # print(style.YELLOW + response)
             #     t3 = time.time()
             #     print(style.BLUE + "inputFrameQueue = " + str(1 / (t3 - t2)))
             #     t2 = time.time()
@@ -345,20 +377,18 @@ def main():
             # print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
             # print(style.YELLOW + "resizedTFQueue = " +
             #       str(resizedTFQueue.qsize()))
-            # if cv2.waitKey(1) == 27:
-            #     break
     except Exception as e:
         print(style.RED + str(e))
-        cv2.destroyAllWindows()
-        cap.stop()
+        cap1.stop()
+        cap2.stop()
         # Notify threads it's time to exit
         exitFlag = 1
         # Wait for all threads to complete
         for t in threads:
             t.join()
     except KeyboardInterrupt:
-        cv2.destroyAllWindows()
-        cap.stop()
+        cap1.stop()
+        cap2.stop()
         # Notify threads it's time to exit
         exitFlag = 1
         # Wait for all threads to complete
@@ -370,8 +400,8 @@ def main():
     # Wait for all threads to complete
     for t in threads:
         t.join()
-    cap.stop()
-    cv2.destroyAllWindows()
+    cap1.stop()
+    cap2.stop()
     print(style.GREEN + "Exiting Main Thread")
 
 
