@@ -5,20 +5,22 @@ import imagiz
 
 
 def main():
-    server = imagiz.TCP_Server(port=5550)
-    server.start()
+    server1 = imagiz.TCP_Server(port=5550)
+    server1.start()
     cv2.namedWindow("frame1", cv2.WINDOW_NORMAL)
-    cv2.namedWindow("frame2", cv2.WINDOW_NORMAL)
+    # server2 = imagiz.TCP_Server(port=5551)
+    # server2.start()
+    # cv2.namedWindow("frame2", cv2.WINDOW_NORMAL)
 
     fps = FPS().start()
     while True:
         try:
-            message = server.receive()
+            message = server1.receive()
             frame = cv2.imdecode(message.image, 1)
             cv2.imshow("frame1", frame)
-            message = server.receive()
-            frame = cv2.imdecode(message.image, 1)
-            cv2.imshow("frame2", frame)
+            # message = server2.receive()
+            # frame = cv2.imdecode(message.image, 1)
+            # cv2.imshow("frame2", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
             fps.update()
