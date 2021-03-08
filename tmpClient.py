@@ -1,5 +1,5 @@
 import threading
-import multiprocessing
+from multiprocessing import Process, Queue
 import time
 import cv2
 import tensorflow as tf
@@ -48,13 +48,20 @@ generator = tf.saved_model.load("./model/pix2pixTF-TRT")
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
 queueLock = threading.Lock()
-inputPix2PixQueue1 = queue.Queue(10)
-inputPix2PixQueue2 = queue.Queue(10)
-inputFrameQueue = queue.Queue(10)
-pix2pixQueue1 = queue.Queue(10)
-pix2pixQueue2 = queue.Queue(10)
-resizedTFQueue = queue.Queue(10)
-handQueue = queue.Queue(10)
+inputPix2PixQueue1 = Queue(10)
+inputPix2PixQueue2 = Queue(10)
+inputFrameQueue = Queue(10)
+pix2pixQueue1 = Queue(10)
+pix2pixQueue2 = Queue(10)
+resizedTFQueue = Queue(10)
+handQueue = Queue(10)
+# inputPix2PixQueue1 = queue.Queue(10)
+# inputPix2PixQueue2 = queue.Queue(10)
+# inputFrameQueue = queue.Queue(10)
+# pix2pixQueue1 = queue.Queue(10)
+# pix2pixQueue2 = queue.Queue(10)
+# resizedTFQueue = queue.Queue(10)
+# handQueue = queue.Queue(10)
 # pix2pixFrame = np.zeros((256, 256, 1))
 # gray = np.zeros((480, 640, 1))
 SIZE = 256
@@ -65,6 +72,21 @@ NORM = 127.5
 class myThread(threading.Thread):
     def __init__(self, name, function, iq, oq=None):
         threading.Thread.__init__(self)
+        self.name = name
+        self.function = function
+        self.iq = iq
+        self.oq = oq
+
+    def run(self):
+        print(style.YELLOW + "Starting " + self.name)
+        self.function(self.iq, self.oq)
+        print(style.GREEN + "Exiting " + self.name)
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
+
+class myProcess(Process):
+    def __init__(self, name, function, iq, oq=None):
+        Process.__init__(self)
         self.name = name
         self.function = function
         self.iq = iq
@@ -185,23 +207,6 @@ preprocessdata = preprocessdata(topology, num_parts)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-def draw_joints(image, joints):
-    count = 0
-    for i in joints:
-        if i == [0, 0]:
-            count += 1
-    if count >= 19:
-        return
-    for i in joints:
-        cv2.circle(image, (i[0], i[1]), 2, (0, 0, 255), 1)
-    cv2.circle(image, (joints[0][0], joints[0][1]), 2, (255, 0, 255), 1)
-    for i in hand_pose['skeleton']:
-        if joints[i[0]-1][0] == 0 or joints[i[1]-1][0] == 0:
-            break
-        cv2.line(image, (joints[i[0]-1][0], joints[i[0]-1][1]),
-                 (joints[i[1]-1][0], joints[i[1]-1][1]), (0, 255, 0), 1)
-
-
 def preprocess(image):
     global device
     device = torch.device('cuda')
@@ -235,8 +240,6 @@ def execute(iq, oq):
             counts, objects, peaks = parse_objects(cmap, paf)
             joints = preprocessdata.joints_inference(
                 image, counts, objects, peaks)
-            # draw_joints(image, joints)
-            # cv2.imshow("execute", image)
             if not oq.full():
                 oq.put(joints)
 
@@ -315,11 +318,11 @@ def main():
                        inputFrameQueue, resizedTFQueue)
     reizeTH.start()
     threads.append(reizeTH)
-    pix2pixTH1 = myThread(
+    pix2pixTH1 = myProcess(
         "pix2pix1 Thread", get_from_model, inputPix2PixQueue1, pix2pixQueue1)
     pix2pixTH1.start()
     threads.append(pix2pixTH1)
-    pix2pixTH2 = myThread(
+    pix2pixTH2 = myProcess(
         "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, pix2pixQueue2)
     pix2pixTH2.start()
     threads.append(pix2pixTH2)
