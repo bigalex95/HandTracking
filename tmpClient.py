@@ -1,3 +1,4 @@
+import trt_pose.coco
 import imagiz
 import queue
 from preprocessdata import preprocessdata
@@ -10,7 +11,6 @@ from torch2trt import TRTModule
 import torch2trt
 import torch
 import trt_pose.models
-
 import json
 import threading
 import ctypes
@@ -21,8 +21,7 @@ import numpy as np
 
 import matplotlib
 # matplotlib.use('TKAgg', force=True)
-print ("Switched to:",matplotlib.get_backend())
-import trt_pose.coco
+print("Switched to:", matplotlib.get_backend())
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 # System call
@@ -52,22 +51,26 @@ generator = tf.saved_model.load("./model/pix2pixTF-TRT")
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
 queueLock = threading.Lock()
-inputPix2PixQueue1 = queue.Queue(10)
-inputPix2PixQueue2 = queue.Queue(10)
-inputFrameQueue = queue.Queue(10)
-pix2pixQueue1 = queue.Queue(7)
-pix2pixQueue2 = queue.Queue(8)
-resizedTFQueue = queue.Queue(9)
-handQueue = queue.Queue(10)
-# pix2pixFrame = np.zeros((256, 256, 1))
-# gray = np.zeros((480, 640, 1))
+inputPix2PixQueue1 = queue.Queue(5)
+inputPix2PixQueue2 = queue.Queue(5)
+inputFrameQueue = queue.Queue(5)
+pix2pixQueue1 = queue.Queue(5)
+pix2pixQueue2 = queue.Queue(5)
+resizedTFQueue = queue.Queue(5)
+handQueue = queue.Queue(5)
+client1 = imagiz.TCP_Client(
+    server_ip='10.42.0.1', server_port=5550, client_name='cc1')
+client2 = imagiz.TCP_Client(
+    server_ip='10.42.0.1', server_port=5550, client_name='cc2')
+client2 = imagiz.TCP_Client(
+    server_ip='10.42.0.1', server_port=5550, client_name='cc3')
 SIZE = 256
 NORM = 127.5
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
 class myThread(threading.Thread):
-    def __init__(self, name, function, iq, oq):
+    def __init__(self, name, function, iq, oq=None):
         threading.Thread.__init__(self)
         self.name = name
         self.function = function
@@ -76,7 +79,10 @@ class myThread(threading.Thread):
 
     def run(self):
         print(style.YELLOW + "Starting " + self.name)
-        self.function(self.iq, self.oq)
+        if self.oq:
+            self.function(self.iq, self.oq)
+        else:
+            self.function(self.iq)
         print(style.GREEN + "Exiting " + self.name)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -283,37 +289,47 @@ def get_from_model(iq, oq):
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
+def send_to_server(iq, cl):
+    print(iq.maxsize)
+    while not exitFlag:
+        if not iq.empty():
+            message = iq.get()
+            cl.send(message)
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
 
 def main():
+    global exitFlag
     cap1 = WebcamVideoStream(src=gstreamer_pipeline(
         sensor_id=0), device=cv2.CAP_GSTREAMER).start()
     cap2 = WebcamVideoStream(src=gstreamer_pipeline(
         sensor_id=1), device=cv2.CAP_GSTREAMER).start()
+
     # Defining and start Threads
     threads = []
-    global exitFlag
 
+    clientTH1 = myThread("client 1", send_to_server, pix2pixQueue1, client1)
+    clientTH2 = myThread("client 2", send_to_server, pix2pixQueue2, client2)
+    clientTH3 = myThread("client 3", send_to_server, handQueue, client3)
     reizeTH = myThread("Resize Thread", resize,
                        inputFrameQueue, resizedTFQueue)
-    reizeTH.start()
-    threads.append(reizeTH)
     pix2pixTH1 = myThread(
         "pix2pix1 Thread", get_from_model, inputPix2PixQueue1, pix2pixQueue1)
-    pix2pixTH1.start()
-    threads.append(pix2pixTH1)
     pix2pixTH2 = myThread(
         "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, pix2pixQueue2)
-    pix2pixTH2.start()
-    threads.append(pix2pixTH2)
     handTH = myThread("hand Pose Thread", execute, resizedTFQueue, handQueue)
-    handTH.start()
-    threads.append(handTH)
 
-    # client1 = imagiz.TCP_Client(
-    #     server_ip='10.42.0.1', server_port=5550, client_name='cc1')
-    # client2 = imagiz.TCP_Client(
-    #     server_ip='10.42.0.1', server_port=5551, client_name='cc2')
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+    threads.append(clientTH1)
+    threads.append(clientTH2)
+    threads.append(clientTH3)
+    threads.append(handTH)
+    threads.append(pix2pixTH2)
+    threads.append(pix2pixTH1)
+    threads.append(reizeTH)
+
+    for t in threads:
+        t.start()
 
     try:
         while True:
@@ -327,19 +343,19 @@ def main():
 
             if not inputPix2PixQueue2.full():
                 inputPix2PixQueue2.put(frame2)
-            # print(style.YELLOW + "pix2pixQueue1 = " +
-            #       str(pix2pixQueue1.qsize()))
-            # print(style.YELLOW + "pix2pixQueue2 = " +
-            #       str(pix2pixQueue2.qsize()))
-            # print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
-            # print(style.YELLOW + "resizedTFQueue = " +
-            #       str(resizedTFQueue.qsize()))
-            # print(style.YELLOW + "inputFrameQueue = " +
-            #       str(inputFrameQueue.qsize()))
-            # print(style.YELLOW + "inputPix2PixQueue1 = " +
-            #       str(inputPix2PixQueue1.qsize()))
-            # print(style.YELLOW + "inputPix2PixQueue2 = " +
-            #       str(inputPix2PixQueue2.qsize()))
+            print(style.YELLOW + "pix2pixQueue1 = " +
+                  str(pix2pixQueue1.qsize()))
+            print(style.YELLOW + "pix2pixQueue2 = " +
+                  str(pix2pixQueue2.qsize()))
+            print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
+            print(style.YELLOW + "resizedTFQueue = " +
+                  str(resizedTFQueue.qsize()))
+            print(style.YELLOW + "inputFrameQueue = " +
+                  str(inputFrameQueue.qsize()))
+            print(style.YELLOW + "inputPix2PixQueue1 = " +
+                  str(inputPix2PixQueue1.qsize()))
+            print(style.YELLOW + "inputPix2PixQueue2 = " +
+                  str(inputPix2PixQueue2.qsize()))
             if not pix2pixQueue1.empty():
                 img1 = pix2pixQueue1.get()
                 print('test1')
@@ -365,7 +381,7 @@ def main():
             #     t3 = time.time()
             #     print(style.BLUE + "inputFrameQueue = " + str(1 / (t3 - t2)))
             #     t2 = time.time()
-            
+
     except Exception as e:
         print(style.RED + str(e))
         cap1.stop()
