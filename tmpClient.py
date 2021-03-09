@@ -20,7 +20,7 @@ import tensorflow as tf
 import numpy as np
 
 import matplotlib
-matplotlib.use('TKAgg', force=True)
+# matplotlib.use('TKAgg', force=True)
 print ("Switched to:",matplotlib.get_backend())
 import trt_pose.coco
 
@@ -55,9 +55,9 @@ queueLock = threading.Lock()
 inputPix2PixQueue1 = queue.Queue(10)
 inputPix2PixQueue2 = queue.Queue(10)
 inputFrameQueue = queue.Queue(10)
-pix2pixQueue1 = queue.Queue(10)
-pix2pixQueue2 = queue.Queue(10)
-resizedTFQueue = queue.Queue(10)
+pix2pixQueue1 = queue.Queue(7)
+pix2pixQueue2 = queue.Queue(8)
+resizedTFQueue = queue.Queue(9)
 handQueue = queue.Queue(10)
 # pix2pixFrame = np.zeros((256, 256, 1))
 # gray = np.zeros((480, 640, 1))
@@ -67,7 +67,7 @@ NORM = 127.5
 
 
 class myThread(threading.Thread):
-    def __init__(self, name, function, iq, oq=None):
+    def __init__(self, name, function, iq, oq):
         threading.Thread.__init__(self)
         self.name = name
         self.function = function
@@ -203,6 +203,7 @@ def preprocess(image):
 
 def execute(iq, oq):
     global device
+    print(style.RED + str(oq.maxsize))
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
@@ -229,6 +230,7 @@ def execute(iq, oq):
 
 
 def resize(iq, oq):
+    print(style.RED + str(oq.maxsize))
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
@@ -257,6 +259,7 @@ def load_from_video(image):
 
 
 def get_from_model(iq, oq):
+    print(style.RED + str(oq.maxsize))
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
@@ -306,10 +309,10 @@ def main():
     handTH.start()
     threads.append(handTH)
 
-    client1 = imagiz.TCP_Client(
-        server_ip='10.42.0.1', server_port=5550, client_name='cc1')
-    client2 = imagiz.TCP_Client(
-        server_ip='10.42.0.1', server_port=5551, client_name='cc2')
+    # client1 = imagiz.TCP_Client(
+    #     server_ip='10.42.0.1', server_port=5550, client_name='cc1')
+    # client2 = imagiz.TCP_Client(
+    #     server_ip='10.42.0.1', server_port=5551, client_name='cc2')
     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
 
     try:
@@ -324,25 +327,35 @@ def main():
 
             if not inputPix2PixQueue2.full():
                 inputPix2PixQueue2.put(frame2)
-
+            # print(style.YELLOW + "pix2pixQueue1 = " +
+            #       str(pix2pixQueue1.qsize()))
+            # print(style.YELLOW + "pix2pixQueue2 = " +
+            #       str(pix2pixQueue2.qsize()))
+            # print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
+            # print(style.YELLOW + "resizedTFQueue = " +
+            #       str(resizedTFQueue.qsize()))
             # print(style.YELLOW + "inputFrameQueue = " +
             #       str(inputFrameQueue.qsize()))
-            # print(style.YELLOW + "inputPix2PixQueue = " +
-            #       str(inputPix2PixQueue.qsize()))
+            # print(style.YELLOW + "inputPix2PixQueue1 = " +
+            #       str(inputPix2PixQueue1.qsize()))
+            # print(style.YELLOW + "inputPix2PixQueue2 = " +
+            #       str(inputPix2PixQueue2.qsize()))
             if not pix2pixQueue1.empty():
                 img1 = pix2pixQueue1.get()
                 print('test1')
-                _, image1 = cv2.imencode('.jpg', img1, encode_param)
-                response = client1.send(image1)
-                print(style.YELLOW + str(response))
-                cv2.imshow('frame1', img1)
+                # _, image1 = cv2.imencode('.jpg', img1, encode_param)
+                # response = client1.send(image1)
+                # print(style.YELLOW + str(response))
+                print(img1.shape)
+                # cv2.imshow('frame1', img1)
             if not pix2pixQueue2.empty():
                 img2 = pix2pixQueue2.get()
                 print('test2')
-                _, image2 = cv2.imencode('.jpg', img2, encode_param)
-                response = client2.send(image2)
-                print(style.BLUE + str(response))
-                cv2.imshow('frame2', img2)
+                # _, image2 = cv2.imencode('.jpg', img2, encode_param)
+                # response = client2.send(image2)
+                # print(style.BLUE + str(response))
+                print(img2.shape)
+                # cv2.imshow('frame2', img2)
             if not handQueue.empty():
                 jointsTmp = handQueue.get()
                 # _, jointsTmpReady = cv2.imencode(
@@ -352,11 +365,7 @@ def main():
             #     t3 = time.time()
             #     print(style.BLUE + "inputFrameQueue = " + str(1 / (t3 - t2)))
             #     t2 = time.time()
-            # print(style.YELLOW + "pix2pixQueue = " +
-            #       str(pix2pixQueue.qsize()))
-            # print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
-            # print(style.YELLOW + "resizedTFQueue = " +
-            #       str(resizedTFQueue.qsize()))
+            
     except Exception as e:
         print(style.RED + str(e))
         cap1.stop()
