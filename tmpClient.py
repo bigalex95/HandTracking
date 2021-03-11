@@ -59,11 +59,11 @@ pix2pixQueue2 = queue.Queue(5)
 resizedTFQueue = queue.Queue(5)
 handQueue = queue.Queue(5)
 client1 = imagiz.TCP_Client(
-    server_ip='10.42.0.1', server_port=5550, client_name='cc1')
+    server_ip='localhost', server_port=5550, client_name='cc1')
 client2 = imagiz.TCP_Client(
-    server_ip='10.42.0.1', server_port=5550, client_name='cc2')
-client2 = imagiz.TCP_Client(
-    server_ip='10.42.0.1', server_port=5550, client_name='cc3')
+    server_ip='localhost', server_port=5550, client_name='cc2')
+client3 = imagiz.TCP_Client(
+    server_ip='localhost', server_port=5550, client_name='cc3')
 SIZE = 256
 NORM = 127.5
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -230,7 +230,9 @@ def execute(iq, oq):
             joints = preprocessdata.joints_inference(
                 image, counts, objects, peaks)
             if not oq.full():
-                oq.put(joints)
+                arrjoints = np.array(joints)
+                print(arrjoints)
+                oq.put(arrjoints)
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -294,6 +296,7 @@ def send_to_server(iq, cl):
     while not exitFlag:
         if not iq.empty():
             message = iq.get()
+            # print(message.image)
             cl.send(message)
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -343,45 +346,19 @@ def main():
 
             if not inputPix2PixQueue2.full():
                 inputPix2PixQueue2.put(frame2)
-            print(style.YELLOW + "pix2pixQueue1 = " +
-                  str(pix2pixQueue1.qsize()))
-            print(style.YELLOW + "pix2pixQueue2 = " +
-                  str(pix2pixQueue2.qsize()))
-            print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
-            print(style.YELLOW + "resizedTFQueue = " +
-                  str(resizedTFQueue.qsize()))
-            print(style.YELLOW + "inputFrameQueue = " +
-                  str(inputFrameQueue.qsize()))
-            print(style.YELLOW + "inputPix2PixQueue1 = " +
-                  str(inputPix2PixQueue1.qsize()))
-            print(style.YELLOW + "inputPix2PixQueue2 = " +
-                  str(inputPix2PixQueue2.qsize()))
-            if not pix2pixQueue1.empty():
-                img1 = pix2pixQueue1.get()
-                print('test1')
-                # _, image1 = cv2.imencode('.jpg', img1, encode_param)
-                # response = client1.send(image1)
-                # print(style.YELLOW + str(response))
-                print(img1.shape)
-                # cv2.imshow('frame1', img1)
-            if not pix2pixQueue2.empty():
-                img2 = pix2pixQueue2.get()
-                print('test2')
-                # _, image2 = cv2.imencode('.jpg', img2, encode_param)
-                # response = client2.send(image2)
-                # print(style.BLUE + str(response))
-                print(img2.shape)
-                # cv2.imshow('frame2', img2)
-            if not handQueue.empty():
-                jointsTmp = handQueue.get()
-                # _, jointsTmpReady = cv2.imencode(
-                #     '.jpg', jointsTmp, encode_param)
-                # response = client1.send(jointsTmpReady)
-                # print(style.YELLOW + response)
-            #     t3 = time.time()
-            #     print(style.BLUE + "inputFrameQueue = " + str(1 / (t3 - t2)))
-            #     t2 = time.time()
-
+            # print(style.YELLOW + "pix2pixQueue1 = " +
+            #       str(pix2pixQueue1.qsize()))
+            # print(style.YELLOW + "pix2pixQueue2 = " +
+            #       str(pix2pixQueue2.qsize()))
+            # print(style.YELLOW + "handQueue = " + str(handQueue.qsize()))
+            # print(style.YELLOW + "resizedTFQueue = " +
+            #       str(resizedTFQueue.qsize()))
+            # print(style.YELLOW + "inputFrameQueue = " +
+            #       str(inputFrameQueue.qsize()))
+            # print(style.YELLOW + "inputPix2PixQueue1 = " +
+            #       str(inputPix2PixQueue1.qsize()))
+            # print(style.YELLOW + "inputPix2PixQueue2 = " +
+            #       str(inputPix2PixQueue2.qsize()))            
     except Exception as e:
         print(style.RED + str(e))
         cap1.stop()
