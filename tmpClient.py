@@ -1,27 +1,23 @@
 import trt_pose.coco
+from trt_pose.parse_objects import ParseObjects
+from trt_pose.draw_objects import DrawObjects
+import trt_pose.models
+from torch2trt import TRTModule
+import torch2trt
+import json
 import imagiz
 import queue
 from preprocessdata import preprocessdata
 import os
-from trt_pose.parse_objects import ParseObjects
-from trt_pose.draw_objects import DrawObjects
 import PIL.Image
 import torchvision.transforms as transforms
-from torch2trt import TRTModule
-import torch2trt
 import torch
-import trt_pose.models
-import json
 import threading
 import ctypes
 import time
 import cv2
 import tensorflow as tf
 import numpy as np
-
-import matplotlib
-# matplotlib.use('TKAgg', force=True)
-print("Switched to:", matplotlib.get_backend())
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 # System call
@@ -60,10 +56,10 @@ resizedTFQueue = queue.Queue(5)
 handQueue = queue.Queue(5)
 client1 = imagiz.TCP_Client(
     server_ip='localhost', server_port=5550, client_name='cc1')
-client2 = imagiz.TCP_Client(
-    server_ip='localhost', server_port=5550, client_name='cc2')
-client3 = imagiz.TCP_Client(
-    server_ip='localhost', server_port=5550, client_name='cc3')
+# client2 = imagiz.TCP_Client(
+#     server_ip='localhost', server_port=5550, client_name='cc2')
+# client3 = imagiz.TCP_Client(
+#     server_ip='localhost', server_port=5550, client_name='cc3')
 SIZE = 256
 NORM = 127.5
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -154,44 +150,44 @@ def gstreamer_pipeline(
 # TRT Pose Detection variables declaration
 # <==================================================================>
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-with open('hand_pose.json', 'r') as f:
-    hand_pose = json.load(f)
+# with open('hand_pose.json', 'r') as f:
+#     hand_pose = json.load(f)
 
-topology = trt_pose.coco.coco_category_to_topology(hand_pose)
+# topology = trt_pose.coco.coco_category_to_topology(hand_pose)
 
-num_parts = len(hand_pose['keypoints'])
-num_links = len(hand_pose['skeleton'])
+# num_parts = len(hand_pose['keypoints'])
+# num_links = len(hand_pose['skeleton'])
 
-model = trt_pose.models.resnet18_baseline_att(
-    num_parts, 2 * num_links).cuda().eval()
+# model = trt_pose.models.resnet18_baseline_att(
+#     num_parts, 2 * num_links).cuda().eval()
 
-WIDTH = 224
-HEIGHT = 224
-data = torch.zeros((1, 3, HEIGHT, WIDTH)).cuda()
+# WIDTH = 224
+# HEIGHT = 224
+# data = torch.zeros((1, 3, HEIGHT, WIDTH)).cuda()
 
-if not os.path.exists('./model/hand_pose_resnet18_att_244_244_trt.pth'):
-    MODEL_WEIGHTS = './model/hand_pose_resnet18_att_244_244.pth'
-    model.load_state_dict(torch.load(MODEL_WEIGHTS))
-    import torch2trt
-    model_trt = torch2trt.torch2trt(
-        model, [data], fp16_mode=True, max_workspace_size=1 << 25)
-    OPTIMIZED_MODEL = './model/hand_pose_resnet18_att_244_244_trt.pth'
-    torch.save(model_trt.state_dict(), OPTIMIZED_MODEL)
+# if not os.path.exists('./model/hand_pose_resnet18_att_244_244_trt.pth'):
+#     MODEL_WEIGHTS = './model/hand_pose_resnet18_att_244_244.pth'
+#     model.load_state_dict(torch.load(MODEL_WEIGHTS))
+#     import torch2trt
+#     model_trt = torch2trt.torch2trt(
+#         model, [data], fp16_mode=True, max_workspace_size=1 << 25)
+#     OPTIMIZED_MODEL = './model/hand_pose_resnet18_att_244_244_trt.pth'
+#     torch.save(model_trt.state_dict(), OPTIMIZED_MODEL)
 
-OPTIMIZED_MODEL = './model/hand_pose_resnet18_att_244_244_trt.pth'
+# OPTIMIZED_MODEL = './model/hand_pose_resnet18_att_244_244_trt.pth'
 
-model_trt = TRTModule()
-model_trt.load_state_dict(torch.load(OPTIMIZED_MODEL))
+# model_trt = TRTModule()
+# model_trt.load_state_dict(torch.load(OPTIMIZED_MODEL))
 
-parse_objects = ParseObjects(
-    topology, cmap_threshold=0.15, link_threshold=0.15)
-draw_objects = DrawObjects(topology)
+# parse_objects = ParseObjects(
+#     topology, cmap_threshold=0.15, link_threshold=0.15)
+# draw_objects = DrawObjects(topology)
 
-mean = torch.Tensor([0.485, 0.456, 0.406]).cuda()
-std = torch.Tensor([0.229, 0.224, 0.225]).cuda()
-device = torch.device('cuda')
+# mean = torch.Tensor([0.485, 0.456, 0.406]).cuda()
+# std = torch.Tensor([0.229, 0.224, 0.225]).cuda()
+# device = torch.device('cuda')
 
-preprocessdata = preprocessdata(topology, num_parts)
+# preprocessdata = preprocessdata(topology, num_parts)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
@@ -209,7 +205,7 @@ def preprocess(image):
 
 def execute(iq, oq):
     global device
-    print(style.RED + str(oq.maxsize))
+    # print(style.RED + str(oq.maxsize))
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
@@ -238,7 +234,7 @@ def execute(iq, oq):
 
 
 def resize(iq, oq):
-    print(style.RED + str(oq.maxsize))
+    # print(style.RED + str(oq.maxsize))
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
@@ -267,7 +263,7 @@ def load_from_video(image):
 
 
 def get_from_model(iq, oq):
-    print(style.RED + str(oq.maxsize))
+    # print(style.RED + str(oq.maxsize))
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
@@ -304,32 +300,33 @@ def send_to_server(iq, cl):
 
 def main():
     global exitFlag
+    threads = []
+    cameras = []
     cap1 = WebcamVideoStream(src=gstreamer_pipeline(
         sensor_id=0), device=cv2.CAP_GSTREAMER).start()
-    cap2 = WebcamVideoStream(src=gstreamer_pipeline(
-        sensor_id=1), device=cv2.CAP_GSTREAMER).start()
-
+    # cap2 = WebcamVideoStream(src=gstreamer_pipeline(
+    #     sensor_id=1), device=cv2.CAP_GSTREAMER).start()
+    cameras.append(cap1)
+    # cameras.append(cap2)
     # Defining and start Threads
-    threads = []
-
     clientTH1 = myThread("client 1", send_to_server, pix2pixQueue1, client1)
-    clientTH2 = myThread("client 2", send_to_server, pix2pixQueue2, client2)
-    clientTH3 = myThread("client 3", send_to_server, handQueue, client3)
-    reizeTH = myThread("Resize Thread", resize,
-                       inputFrameQueue, resizedTFQueue)
+    # clientTH2 = myThread("client 2", send_to_server, pix2pixQueue2, client2)
+    # clientTH3 = myThread("client 3", send_to_server, handQueue, client3)
+    # reizeTH = myThread("Resize Thread", resize,
+    #                    inputFrameQueue, resizedTFQueue)
     pix2pixTH1 = myThread(
         "pix2pix1 Thread", get_from_model, inputPix2PixQueue1, pix2pixQueue1)
-    pix2pixTH2 = myThread(
-        "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, pix2pixQueue2)
-    handTH = myThread("hand Pose Thread", execute, resizedTFQueue, handQueue)
+    # pix2pixTH2 = myThread(
+    #     "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, pix2pixQueue2)
+    # handTH = myThread("hand Pose Thread", execute, resizedTFQueue, handQueue)
 
     threads.append(clientTH1)
-    threads.append(clientTH2)
-    threads.append(clientTH3)
-    threads.append(handTH)
-    threads.append(pix2pixTH2)
+    # threads.append(clientTH2)
+    # threads.append(clientTH3)
+    # threads.append(handTH)
+    # threads.append(pix2pixTH2)
     threads.append(pix2pixTH1)
-    threads.append(reizeTH)
+    # threads.append(reizeTH)
 
     for t in threads:
         t.start()
@@ -338,14 +335,14 @@ def main():
         while True:
             frame1 = cap1.read()
             frame2 = cap2.read()
-            if not inputFrameQueue.full():
-                inputFrameQueue.put(frame1)
+            # if not inputFrameQueue.full():
+            #     inputFrameQueue.put(frame1)
 
             if not inputPix2PixQueue1.full():
                 inputPix2PixQueue1.put(frame1)
 
-            if not inputPix2PixQueue2.full():
-                inputPix2PixQueue2.put(frame2)
+            # if not inputPix2PixQueue2.full():
+            #     inputPix2PixQueue2.put(frame2)
             # print(style.YELLOW + "pix2pixQueue1 = " +
             #       str(pix2pixQueue1.qsize()))
             # print(style.YELLOW + "pix2pixQueue2 = " +
@@ -358,19 +355,19 @@ def main():
             # print(style.YELLOW + "inputPix2PixQueue1 = " +
             #       str(inputPix2PixQueue1.qsize()))
             # print(style.YELLOW + "inputPix2PixQueue2 = " +
-            #       str(inputPix2PixQueue2.qsize()))            
+            #       str(inputPix2PixQueue2.qsize()))
     except Exception as e:
         print(style.RED + str(e))
-        cap1.stop()
-        cap2.stop()
+        for c in cameras:
+            c.stop()
         # Notify threads it's time to exit
         exitFlag = 1
         # Wait for all threads to complete
         for t in threads:
             t.join()
     except KeyboardInterrupt:
-        cap1.stop()
-        cap2.stop()
+        for c in cameras:
+            c.stop()
         # Notify threads it's time to exit
         exitFlag = 1
         # Wait for all threads to complete
@@ -382,8 +379,8 @@ def main():
     # Wait for all threads to complete
     for t in threads:
         t.join()
-    cap1.stop()
-    cap2.stop()
+    for c in cameras:
+        c.stop()
     print(style.GREEN + "Exiting Main Thread")
 
 
