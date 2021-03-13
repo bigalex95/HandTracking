@@ -1,10 +1,10 @@
-import trt_pose.coco
-from trt_pose.parse_objects import ParseObjects
-from trt_pose.draw_objects import DrawObjects
-import trt_pose.models
-from torch2trt import TRTModule
-import torch2trt
-import json
+# import trt_pose.coco
+# from trt_pose.parse_objects import ParseObjects
+# from trt_pose.draw_objects import DrawObjects
+# import trt_pose.models
+# from torch2trt import TRTModule
+# import torch2trt
+# import json
 import imagiz
 import queue
 from preprocessdata import preprocessdata
@@ -303,7 +303,7 @@ def main():
     threads = []
     cameras = []
     cap1 = WebcamVideoStream(src=gstreamer_pipeline(
-        sensor_id=0), device=cv2.CAP_GSTREAMER).start()
+        sensor_id=2), device=cv2.CAP_GSTREAMER).start()
     # cap2 = WebcamVideoStream(src=gstreamer_pipeline(
     #     sensor_id=1), device=cv2.CAP_GSTREAMER).start()
     cameras.append(cap1)
@@ -334,11 +334,12 @@ def main():
     try:
         while True:
             frame1 = cap1.read()
-            frame2 = cap2.read()
+            # frame2 = cap2.read()
             # if not inputFrameQueue.full():
             #     inputFrameQueue.put(frame1)
 
-            if not inputPix2PixQueue1.full():
+            if inputPix2PixQueue1.full():
+                tmp = inputPix2PixQueue1.get()
                 inputPix2PixQueue1.put(frame1)
 
             # if not inputPix2PixQueue2.full():
