@@ -68,7 +68,7 @@ print(type(arr))
 
 def main():
     global exitFlag
-    cap = cv2.VideoCapture(0)
+    # cap = cv2.VideoCapture(0)
     clientTH1 = myThread("client 1", send_to_server, clientQueue1, client1)
     clientTH2 = myThread("client 2", send_to_server, clientQueue2, client2)
     clientTH1.start()
@@ -76,11 +76,11 @@ def main():
     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
     fps = FPS().start()
     while True:
-        _, frame = cap.read()
+        # _, frame = cap.read()
         cv2.imshow("client1", frame)
         if not clientQueue1.full():
             # _, image1 = cv2.imencode('.jpg', frame, encode_param)
-            clientQueue1.put(frame)
+            clientQueue1.put(arr)
         if not clientQueue2.full():
             clientQueue2.put(arr)
         if cv2.waitKey(1) & 0xFF == ord('q'):

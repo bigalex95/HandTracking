@@ -11,7 +11,7 @@ import queue
 
 def main():
     global exitFlag
-    server1 = imagiz.TCP_Server(port=5550)
+    server1 = imagiz.TCP_Server(port=5553)
     server1.start()
 
     cv2.namedWindow("frame1", cv2.WINDOW_NORMAL)
