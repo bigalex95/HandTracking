@@ -40,6 +40,17 @@ class style():
     UNDERLINE = '\033[4m'
     RESET = '\033[0m'
 
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+    try:
+        # Currently, memory growth needs to be the same across GPUs
+        for gpu in gpus:
+            tf.config.experimental.set_memory_growth(gpu, True)
+        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+    except RuntimeError as e:
+        # Memory growth must be set before GPUs have been initialized
+        print(e)
 
 # global variables
 # <==================================================================>
@@ -52,19 +63,19 @@ resize1Queue = queue.Queue(3)
 resize2Queue = queue.Queue(3)
 resize3Queue = queue.Queue(3)
 jointsQueue = queue.Queue(3)
-x0 = 100
-y0 = 100
-WIDTH = 1000
-HEIGHT = 1000
+x0 = 0
+y0 = 0
+WIDTH = 1080
+HEIGHT = 1080
 
 # imagiz Config
 # <==================================================================>
 client1 = imagiz.TCP_Client(
-    server_ip='localhost', server_port=5550, client_name='cc1')
+    server_ip='10.42.0.1', server_port=5550, client_name='cc1')
 client2 = imagiz.TCP_Client(
-    server_ip='localhost', server_port=5550, client_name='cc2')
+    server_ip='10.42.0.1', server_port=5550, client_name='cc2')
 client3 = imagiz.TCP_Client(
-    server_ip='localhost', server_port=5550, client_name='cc3')
+    server_ip='10.42.0.1', server_port=5550, client_name='cc3')
 
 # Socketio Config
 # <==================================================================>
@@ -262,14 +273,13 @@ def resize(iq, oq, size):
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
-            # print(image.shape)
-            # print(type(image))
-            crop_tf = tf.image.crop_to_bounding_box(
-                image_tf, y0, x0, HEIGHT, WIDTH)
-            resize_tf = tf.image.resize(crop_tf, (size, size))
-            imgTF = tf.cast(imgTF,  dtype=tf.uint8)
+            image_tf = tf.convert_to_tensor(image)
+            # image_tf = tf.image.crop_to_bounding_box(
+            #     image_tf, y0, x0, HEIGHT, WIDTH)
+            image_tf = tf.image.resize(image_tf, (size, size))
+            image_tf = tf.cast(image_tf,  dtype=tf.uint8)
             if not oq.full():
-                oq.put(imgTF.numpy())
+                oq.put(image_tf.numpy())
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -280,7 +290,8 @@ def send_to_imagiz_server(iq, cl):
         if not iq.empty():
             # from image to binary buffer
             _, image = cv2.imencode('.jpg', iq.get(), encode_param)
-            cl.send(image)
+            res = cl.send(image)
+            # print(res)
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -317,7 +328,7 @@ def main():
         "client 2", send_to_imagiz_server, resize2Queue, client2)
     clientTH3 = startThread(
         "client 3", send_to_imagiz_server, jointsQueue, client3)
-    handTH = myThread("hand Pose Thread", execute, resize3Queue, jointsQueue)
+    handTH = startThread("hand Pose Thread", execute, resize3Queue, jointsQueue)
     resizeTH1 = threading.Thread(
         target=resize, args=(input1Queue, resize1Queue, 256,))
     resizeTH2 = threading.Thread(
