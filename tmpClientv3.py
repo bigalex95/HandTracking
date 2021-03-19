@@ -273,6 +273,22 @@ def resize(iq, oq, size):
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
+            image = image[0:1080, 420:1080]
+            image_tf = tf.convert_to_tensor(image)
+            # image_tf = tf.image.crop_to_bounding_box(
+            #     image_tf, y0, x0, HEIGHT, WIDTH)
+            image_tf = tf.image.resize(image_tf, (size, size))
+            image_tf = tf.cast(image_tf,  dtype=tf.uint8)
+            if not oq.full():
+                oq.put(image_tf.numpy())
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+def resize_renew(iq, oq, size):
+    while not exitFlag:
+        if not iq.empty():
+            image = iq.get()
+            iq.put(image)
+            image = image[0:1080, 420:1080]
             image_tf = tf.convert_to_tensor(image)
             # image_tf = tf.image.crop_to_bounding_box(
             #     image_tf, y0, x0, HEIGHT, WIDTH)
@@ -289,7 +305,8 @@ def send_to_imagiz_server(iq, cl):
     while not exitFlag:
         if not iq.empty():
             # from image to binary buffer
-            _, image = cv2.imencode('.jpg', iq.get(), encode_param)
+            image = iq.get()
+            # _, image = cv2.imencode('.jpg', iq.get(), encode_param)
             res = cl.send(image)
             # print(res)
 
@@ -330,11 +347,11 @@ def main():
         "client 3", send_to_imagiz_server, jointsQueue, client3)
     handTH = startThread("hand Pose Thread", execute, resize3Queue, jointsQueue)
     resizeTH1 = threading.Thread(
-        target=resize, args=(input1Queue, resize1Queue, 256,))
+        target=resize_renew, args=(input1Queue, resize1Queue, 256,))
     resizeTH2 = threading.Thread(
         target=resize, args=(input2Queue, resize2Queue, 256,))
     resizeTH3 = threading.Thread(
-        target=resize, args=(input3Queue, resize3Queue, 224,))
+        target=resize, args=(input1Queue, resize3Queue, 224,))
 
     threads.append(clientTH1)
     threads.append(clientTH2)
@@ -357,8 +374,8 @@ def main():
             if not input2Queue.full():
                 input2Queue.put(frame2)
 
-            if not input3Queue.full():
-                input3Queue.put(frame1)
+            # if not input3Queue.full():
+            #     input3Queue.put(frame1)
 
     except Exception as e:
         print(style.RED + str(e))
