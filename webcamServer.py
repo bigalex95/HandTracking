@@ -64,10 +64,12 @@ def main():
             if message1.client_name == "cc1":
                 # frame1 = cv2.imdecode(message1.image, 1)
                 frame1 = message1.image
+                frame1 = frame1[..., ::-1]
             if message1.client_name == "cc2":
                 # frame2 = cv2.imdecode(message1.image, 1)
                 frame2 = message1.image
-                cv2.imshow("frame2", frame2)
+                frame2 = frame2[..., ::-1]
+                # cv2.imshow("frame2", frame2)
             if message1.client_name == "cc3":
                 # joints = cv2.imdecode(message1.image, 1)
                 joints = message1.image
@@ -76,8 +78,10 @@ def main():
                 fps.update()
             # cv2.imshow("frame1", frame1)
             # cv2.imshow("frame2", frame2)
-            camera1.schedule_frame(frame1)
-            camera2.schedule_frame(frame2)
+
+            if frame1.any():
+                camera1.schedule_frame(frame1)
+                camera2.schedule_frame(frame2)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
             fps.update()
