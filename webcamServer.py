@@ -70,17 +70,20 @@ def main():
                 frame2 = message1.image
                 frame2 = frame2[..., ::-1]
                 # cv2.imshow("frame2", frame2)
-            if message1.client_name == "cc3":
-                # joints = cv2.imdecode(message1.image, 1)
-                joints = message1.image
-                # draw_joints(frame1, joints)
-                # cv2.imshow("frame1", frame1)
-                fps.update()
+            # if message1.client_name == "cc3":
+            #     # joints = cv2.imdecode(message1.image, 1)
+            #     joints = message1.image
+            #     # draw_joints(frame1, joints)
+            #     # cv2.imshow("frame1", frame1)
             # cv2.imshow("frame1", frame1)
             # cv2.imshow("frame2", frame2)
 
             if frame1.any():
+                # print(frame1.shape)
                 camera1.schedule_frame(frame1)
+
+            if frame2.any():
+                # print(frame2.shape)
                 camera2.schedule_frame(frame2)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
