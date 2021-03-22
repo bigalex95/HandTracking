@@ -188,7 +188,7 @@ def main():
     cap1 = WebcamVideoStream(src=gstreamer_pipeline(
         sensor_id=0), device=cv2.CAP_GSTREAMER).start()
     cameras.append(cap1)
-    clientTH1 = myThread("client 1", send_to_server,
+    clientTH1 = myThread("client 1", send_to_imagiz_server,
                          outputPix2PixQueue, client1)
 
     pix2pixTH1 = myThread(
