@@ -204,9 +204,8 @@ def main():
         while True:
             frame1 = cap1.read()
 
-            if inputPix2PixQueue1.full():
-                tmp = inputPix2PixQueue1.get()
-                inputPix2PixQueue1.put(frame1)
+            if not inputPix2PixQueue.full():
+                inputPix2PixQueue.put(frame1)
 
     except Exception as e:
         print(style.RED + str(e))
