@@ -1,3 +1,5 @@
-*/*
-*.pth
+model/
+venv/
+node_modules/
 *.zip
+*.pth
