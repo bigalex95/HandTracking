@@ -2,22 +2,23 @@ import numpy as np
 import cv2
 import time
 import threading
+from multiprocessing import Process, Queue
 import os
 import queue
 import imagiz
-import tensorflow as tf
+# import tensorflow as tf
 
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        # Currently, memory growth needs to be the same across GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-    except RuntimeError as e:
-        # Memory growth must be set before GPUs have been initialized
-        print(e)
+# gpus = tf.config.experimental.list_physical_devices('GPU')
+# if gpus:
+#     try:
+#         # Currently, memory growth needs to be the same across GPUs
+#         for gpu in gpus:
+#             tf.config.experimental.set_memory_growth(gpu, True)
+#         logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+#         print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+#     except RuntimeError as e:
+#         # Memory growth must be set before GPUs have been initialized
+#         print(e)
 
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -48,8 +49,8 @@ generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
 queueLock = threading.Lock()
-inputPix2PixQueue = queue.Queue(5)
-outputPix2PixQueue = queue.Queue(5)
+inputPix2PixQueue = Queue(5)
+outputPix2PixQueue = Queue(5)
 client1 = imagiz.TCP_Client(
     server_ip='10.42.0.1', server_port=5550, client_name='cc1')
 SIZE = 512
@@ -57,9 +58,9 @@ NORM = 255.5
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-class myThread(threading.Thread):
+class myThread(Process):
     def __init__(self, name, function, iq, oq=None):
-        threading.Thread.__init__(self)
+        Process.__init__(self)
         self.name = name
         self.function = function
         self.iq = iq
@@ -67,6 +68,21 @@ class myThread(threading.Thread):
 
     def run(self):
         print(style.YELLOW + "Starting " + self.name)
+        import tensorflow as tf
+
+        gpus = tf.config.experimental.list_physical_devices('GPU')
+        if gpus:
+            try:
+                # Currently, memory growth needs to be the same across GPUs
+                for gpu in gpus:
+                    tf.config.experimental.set_memory_growth(gpu, True)
+                logical_gpus = tf.config.experimental.list_logical_devices(
+                    'GPU')
+                print(len(gpus), "Physical GPUs,", len(
+                    logical_gpus), "Logical GPUs")
+            except RuntimeError as e:
+                # Memory growth must be set before GPUs have been initialized
+                print(e)
         if self.oq:
             self.function(self.iq, self.oq)
         else:
