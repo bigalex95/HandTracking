@@ -143,93 +143,58 @@ def gstreamer_pipeline(
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-def get_from_model(iq, oq):
-    # print(style.RED + str(oq.maxsize))
-    while not exitFlag:
-        if not iq.empty():
-            image = iq.get()
-            # print(image.shape)
-            # print(type(image))
-            input_image = tf.cast(image, tf.float32)
-            input_image = tf.image.resize(input_image, [SIZE, SIZE],
-                                          method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-            input_image = (input_image / NORM) - 1
-            # input_image = load_from_video(image)
-            ext_image = tf.expand_dims(input_image, axis=0)
-            prediction = generator(ext_image, training=True)
-            # generated_image = generate_images(generator, ext_image)
-            # pil_image = tf.keras.preprocessing.image.array_to_img(
-            #     generated_image)
-            pil_image = tf.keras.preprocessing.image.array_to_img(
-                prediction[0])
-            if not oq.full():
-                oq.put(np.array(pil_image))
+def get_from_model(image):
+    input_image = tf.cast(image, tf.float32)
+    input_image = tf.image.resize(input_image, [SIZE, SIZE],
+                                  method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
+    input_image = (input_image / NORM) - 1
+    # input_image = load_from_video(image)
+    ext_image = tf.expand_dims(input_image, axis=0)
+    prediction = generator(ext_image, training=True)
+    # generated_image = generate_images(generator, ext_image)
+    # pil_image = tf.keras.preprocessing.image.array_to_img(
+    #     generated_image)
+    pil_image = tf.keras.preprocessing.image.array_to_img(
+        prediction[0])
+    return pil_image
 
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
-def send_to_imagiz_server(iq, cl):
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
-    while not exitFlag:
-        if not iq.empty():
-            # from image to binary buffer
-            image = iq.get()
-            # _, image = cv2.imencode('.jpg', iq.get(), encode_param)
-            res = cl.send(image)
-            # print(res)
+# def send_to_imagiz_server(iq, cl):
+#     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+#     while not exitFlag:
+#         if not iq.empty():
+#             # from image to binary buffer
+#             image = iq.get()
+#             # _, image = cv2.imencode('.jpg', iq.get(), encode_param)
+#             res = cl.send(image)
+#             # print(res)
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
 def main():
     global exitFlag
-    threads = []
     cameras = []
     cap1 = WebcamVideoStream(src=gstreamer_pipeline(
         sensor_id=1), device=cv2.CAP_GSTREAMER).start()
     cameras.append(cap1)
-    clientTH1 = myThread("client 2", send_to_imagiz_server,
-                         outputPix2PixQueue, client1)
-
-    pix2pixTH1 = myThread(
-        "pix2pix2 Thread", get_from_model, inputPix2PixQueue, outputPix2PixQueue)
-
-    threads.append(clientTH1)
-    threads.append(pix2pixTH1)
-
-    for t in threads:
-        t.start()
 
     try:
         while True:
             frame1 = cap1.read()
-
-            if not inputPix2PixQueue.full():
-                inputPix2PixQueue.put(frame1)
+            result_image = get_from_model(frame1)
+            client1.send(result_image)
 
     except Exception as e:
         print(style.RED + str(e))
         for c in cameras:
             c.stop()
-        # Notify threads it's time to exit
-        exitFlag = 1
-        # Wait for all threads to complete
-        for t in threads:
-            t.join()
     except KeyboardInterrupt:
         for c in cameras:
             c.stop()
-        # Notify threads it's time to exit
-        exitFlag = 1
-        # Wait for all threads to complete
-        for t in threads:
-            t.join()
 
-    # Notify threads it's time to exit
-    exitFlag = 1
-    # Wait for all threads to complete
-    for t in threads:
-        t.join()
     for c in cameras:
         c.stop()
     print(style.GREEN + "Exiting Main Thread")
