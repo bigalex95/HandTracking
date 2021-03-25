@@ -1,24 +1,14 @@
-import numpy as np
-import cv2
-import time
-import threading
-import os
-import queue
 import imagiz
+import queue
+import os
+import threading
+import time
+import cv2
+import numpy as np
+import socketio
+import base64
 import tensorflow as tf
-
-gpus = tf.config.experimental.list_physical_devices('GPU')
-if gpus:
-    try:
-        # Currently, memory growth needs to be the same across GPUs
-        for gpu in gpus:
-            tf.config.experimental.set_memory_growth(gpu, True)
-        logical_gpus = tf.config.experimental.list_logical_devices('GPU')
-        print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
-    except RuntimeError as e:
-        # Memory growth must be set before GPUs have been initialized
-        print(e)
-
+import multiprocessing
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 # System call
@@ -41,22 +31,43 @@ class style():
 
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-# Pix2Pix variables declaration
-# <==================================================================>
-generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
-# <==================================================================>
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
 queueLock = threading.Lock()
-inputPix2PixQueue = queue.Queue(5)
-outputPix2PixQueue = queue.Queue(5)
-client1 = imagiz.TCP_Client(
-    server_ip='10.42.0.1', server_port=5550, client_name='cc2')
-SIZE = 512
-NORM = 255.5
+inputPix2PixQueue1 = queue.Queue(5)
+inputPix2PixQueue2 = queue.Queue(5)
+inputFrameQueue = multiprocessing.Queue(5)
+pix2pixQueue1 = queue.Queue(5)
+pix2pixQueue2 = queue.Queue(5)
+resizedTFQueue = multiprocessing.Queue(5)
+handQueue = queue.Queue(5)
+# client1 = imagiz.TCP_Client(
+#     server_ip='localhost', server_port=5550, client_name='cc1')
+# client2 = imagiz.TCP_Client(
+#     server_ip='localhost', server_port=5550, client_name='cc2')
+# client3 = imagiz.TCP_Client(
+#     server_ip='localhost', server_port=5550, client_name='cc3')
+sio = socketio.Client()
+sio.connect('http://10.42.0.1:3000', namespaces=['/'])
+SIZE = 256
+NORM = 127.5
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
+@sio.event
+def connect():
+    print("I'm connected!")
+
+
+@sio.event
+def connect_error():
+    print("The connection failed!")
+
+
+@sio.event
+def disconnect():
+    print("I'm disconnected!")
+
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 class myThread(threading.Thread):
     def __init__(self, name, function, iq, oq=None):
         threading.Thread.__init__(self)
@@ -72,7 +83,22 @@ class myThread(threading.Thread):
         else:
             self.function(self.iq)
         print(style.GREEN + "Exiting " + self.name)
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+class myProcess(multiprocessing.Process):
+    def __init__(self, name, function, iq, oq=None):
+        multiprocessing.Process.__init__(self)
+        self.name = name
+        self.function = function
+        self.iq = iq
+        self.oq = oq
 
+    def run(self):
+        print(style.YELLOW + "Starting " + self.name)
+        if self.oq:
+            self.function(self.iq, self.oq)
+        else:
+            self.function(self.iq)
+        print(style.GREEN + "Exiting " + self.name)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
@@ -143,40 +169,28 @@ def gstreamer_pipeline(
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-def get_from_model(iq, oq):
-    # print(style.RED + str(oq.maxsize))
+def resize(iq, oq):
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
             # print(image.shape)
             # print(type(image))
-            input_image = tf.cast(image, tf.float32)
-            input_image = tf.image.resize(input_image, [SIZE, SIZE],
-                                          method=tf.image.ResizeMethod.NEAREST_NEIGHBOR)
-            input_image = (input_image / NORM) - 1
-            # input_image = load_from_video(image)
-            ext_image = tf.expand_dims(input_image, axis=0)
-            prediction = generator(ext_image, training=True)
-            # generated_image = generate_images(generator, ext_image)
-            # pil_image = tf.keras.preprocessing.image.array_to_img(
-            #     generated_image)
-            pil_image = tf.keras.preprocessing.image.array_to_img(
-                prediction[0])
+            imgTF = tf.convert_to_tensor(image)
+            imgTF = tf.image.resize(imgTF, (256, 256))
+            imgTF = tf.cast(imgTF,  dtype=tf.uint8)
             if not oq.full():
-                oq.put(np.array(pil_image))
-
-
+                oq.put(imgTF.numpy())
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
-def send_to_imagiz_server(iq, cl):
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+def send_to_server(iq, cl):
     while not exitFlag:
         if not iq.empty():
             # from image to binary buffer
-            image = iq.get()
-            # _, image = cv2.imencode('.jpg', iq.get(), encode_param)
-            res = cl.send(image)
-            # print(res)
+            _, frame = cv2.imencode('.jpg', iq.get())
+            # convert to base64 format
+            data = base64.b64encode(frame)
+            # send to server
+            sio.emit(cl, data, namespace='/')
 
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -186,16 +200,30 @@ def main():
     threads = []
     cameras = []
     cap1 = WebcamVideoStream(src=gstreamer_pipeline(
-        sensor_id=1), device=cv2.CAP_GSTREAMER).start()
+        sensor_id=0), device=cv2.CAP_GSTREAMER).start()
+    # cap2 = WebcamVideoStream(src=gstreamer_pipeline(
+    #     sensor_id=1), device=cv2.CAP_GSTREAMER).start()
     cameras.append(cap1)
-    clientTH1 = myThread("client 2", send_to_imagiz_server,
-                         outputPix2PixQueue, client1)
-
-    pix2pixTH1 = myThread(
-        "pix2pix2 Thread", get_from_model, inputPix2PixQueue, outputPix2PixQueue)
+    # cameras.append(cap2)
+    # Defining and start Threads
+    clientTH1 = myThread("client 1", send_to_server, resizedTFQueue, 'data1')
+    # clientTH2 = myThread("client 2", send_to_server, pix2pixQueue2, 'data2')
+    # clientTH3 = myThread("client 3", send_to_server, handQueue, 'data3')
+    reizeTH = myThread("Resize Thread", resize,
+                       inputFrameQueue, resizedTFQueue)
+    # pix2pixTH1 = myThread(
+    #     "pix2pix1 Thread", get_from_model, inputPix2PixQueue1, pix2pixQueue1)
+    # pix2pixTH2 = myThread(
+    #     "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, pix2pixQueue2)
+    # handTH = myThread("hand Pose Thread", execute, resizedTFQueue, handQueue)
 
     threads.append(clientTH1)
-    threads.append(pix2pixTH1)
+    # threads.append(clientTH2)
+    # threads.append(clientTH3)
+    # threads.append(handTH)
+    # threads.append(pix2pixTH2)
+    # threads.append(pix2pixTH1)
+    threads.append(reizeTH)
 
     for t in threads:
         t.start()
@@ -203,10 +231,10 @@ def main():
     try:
         while True:
             frame1 = cap1.read()
-
-            if not inputPix2PixQueue.full():
-                inputPix2PixQueue.put(frame1)
-
+            # frame2 = cap2.read()
+            # if frame1:
+            if not inputFrameQueue.full():
+                inputFrameQueue.put(frame1)
     except Exception as e:
         print(style.RED + str(e))
         for c in cameras:
