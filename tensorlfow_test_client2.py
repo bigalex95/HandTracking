@@ -46,33 +46,10 @@ class style():
 generator = tf.saved_model.load("./model/pix2pixTF-TRT")
 # <==================================================================>
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-exitFlag = 0
-queueLock = threading.Lock()
-inputPix2PixQueue = queue.Queue(5)
-outputPix2PixQueue = queue.Queue(5)
 client1 = imagiz.TCP_Client(
     server_ip='10.42.0.1', server_port=5550, client_name='cc2')
 SIZE = 256
 NORM = 127.5
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-
-
-class myThread(threading.Thread):
-    def __init__(self, name, function, iq, oq=None):
-        threading.Thread.__init__(self)
-        self.name = name
-        self.function = function
-        self.iq = iq
-        self.oq = oq
-
-    def run(self):
-        print(style.YELLOW + "Starting " + self.name)
-        if self.oq:
-            self.function(self.iq, self.oq)
-        else:
-            self.function(self.iq)
-        print(style.GREEN + "Exiting " + self.name)
-
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
@@ -159,23 +136,7 @@ def get_from_model(image):
     return pil_image
 
 
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-
-# def send_to_imagiz_server(iq, cl):
-#     encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
-#     while not exitFlag:
-#         if not iq.empty():
-#             # from image to binary buffer
-#             image = iq.get()
-#             # _, image = cv2.imencode('.jpg', iq.get(), encode_param)
-#             res = cl.send(image)
-#             # print(res)
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-
-
 def main():
-    global exitFlag
     cameras = []
     cap1 = WebcamVideoStream(src=gstreamer_pipeline(
         sensor_id=1), device=cv2.CAP_GSTREAMER).start()
