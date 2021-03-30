@@ -49,16 +49,20 @@ generator = tf.saved_model.load("./model/pix2pixTF-TRT")
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
 queueLock = threading.Lock()
-inputPix2PixQueue = Queue(5)
-outputPix2PixQueue = Queue(5)
+inputPix2PixQueue1 = Queue(3)
+outputPix2PixQueue1 = Queue(3)
+inputPix2PixQueue2 = Queue(3)
+outputPix2PixQueue2 = Queue(3)
 client1 = imagiz.TCP_Client(
     server_ip='10.42.0.1', server_port=5550, client_name='cc1')
+client2 = imagiz.TCP_Client(
+    server_ip='10.42.0.1', server_port=5550, client_name='cc2')
 SIZE = 256
 NORM = 127.5
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-class myThread(Process):
+class myProcess(Process):
     def __init__(self, name, function, iq, oq=None):
         Process.__init__(self)
         self.name = name
@@ -68,27 +72,11 @@ class myThread(Process):
 
     def run(self):
         print(style.YELLOW + "Starting " + self.name)
-        import tensorflow as tf
-
-        gpus = tf.config.experimental.list_physical_devices('GPU')
-        if gpus:
-            try:
-                # Currently, memory growth needs to be the same across GPUs
-                for gpu in gpus:
-                    tf.config.experimental.set_memory_growth(gpu, True)
-                logical_gpus = tf.config.experimental.list_logical_devices(
-                    'GPU')
-                print(len(gpus), "Physical GPUs,", len(
-                    logical_gpus), "Logical GPUs")
-            except RuntimeError as e:
-                # Memory growth must be set before GPUs have been initialized
-                print(e)
         if self.oq:
             self.function(self.iq, self.oq)
         else:
             self.function(self.iq)
         print(style.GREEN + "Exiting " + self.name)
-
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
@@ -154,12 +142,60 @@ def gstreamer_pipeline(
             display_height,
         )
     )
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
+def crop(img, offset_height, offset_width, target_height, target_width):
+    """
+    Args
+    image 	4-D Tensor of shape [batch, height, width, channels] or 3-D Tensor of shape [height, width, channels].
+    offset_height 	Vertical coordinate of the top-left corner of the result in the input.
+    offset_width 	Horizontal coordinate of the top-left corner of the result in the input.
+    target_height 	Height of the result.
+    target_width 	Width of the result. 
+
+    Returns
+    If image was 4-D, a 4-D float Tensor of shape [batch, target_height, target_width, channels] 
+    If image was 3-D, a 3-D float Tensor of shape [target_height, target_width, channels]
+    """
+    return tf.image.crop_to_bounding_box(
+        img, offset_height, offset_width, target_height, target_width)
+# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
+
+def resize(img, size, method=ResizeMethod.BILINEAR, preserve_aspect_ratio=False,
+           antialias=False, name=None):
+    """
+    Args
+    images 	4-D Tensor of shape [batch, height, width, channels] or 3-D Tensor of shape [height, width, channels].
+    size 	A 1-D int32 Tensor of 2 elements: new_height, new_width. The new size for the images.
+    method 	An image.ResizeMethod, or string equivalent. Defaults to bilinear.
+
+    Returns
+    If images was 4-D, a 4-D float Tensor of shape [batch, new_height, new_width, channels]. 
+    If images was 3-D, a 3-D float Tensor of shape [new_height, new_width, channels]. 
+    """
+    return tf.image.resize(img, size, method=ResizeMethod.BILINEAR, preserve_aspect_ratio=False,
+                           antialias=False, name=None)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
 def get_from_model(iq, oq):
+    import tensorflow as tf
+
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+            # Currently, memory growth needs to be the same across GPUs
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            logical_gpus = tf.config.experimental.list_logical_devices(
+                'GPU')
+            print(len(gpus), "Physical GPUs,", len(
+                logical_gpus), "Logical GPUs")
+        except RuntimeError as e:
+            # Memory growth must be set before GPUs have been initialized
+            print(e)
     # print(style.RED + str(oq.maxsize))
     while not exitFlag:
         if not iq.empty():
@@ -180,12 +216,11 @@ def get_from_model(iq, oq):
                 prediction[0])
             if not oq.full():
                 oq.put(np.array(pil_image))
-
-
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
+
 def send_to_imagiz_server(iq, cl):
-    encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
+    # encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
     while not exitFlag:
         if not iq.empty():
             # from image to binary buffer
@@ -193,35 +228,46 @@ def send_to_imagiz_server(iq, cl):
             # _, image = cv2.imencode('.jpg', iq.get(), encode_param)
             res = cl.send(image)
             # print(res)
-
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
 def main():
     global exitFlag
-    threads = []
+    process = []
     cameras = []
     cap1 = WebcamVideoStream(src=gstreamer_pipeline(
         sensor_id=0), device=cv2.CAP_GSTREAMER).start()
+    cap2 = WebcamVideoStream(src=gstreamer_pipeline(
+        sensor_id=1), device=cv2.CAP_GSTREAMER).start()
     cameras.append(cap1)
-    clientTH1 = myThread("client 1", send_to_imagiz_server,
-                         outputPix2PixQueue, client1)
+    cameras.append(cap2)
+    clientTH1 = myProcess("client 1", send_to_imagiz_server,
+                          outputPix2PixQueue1, client1)
+    clientTH2 = myProcess("client 2", send_to_imagiz_server,
+                          outputPix2PixQueue2, client2)
 
-    pix2pixTH1 = myThread(
-        "pix2pix1 Thread", get_from_model, inputPix2PixQueue, outputPix2PixQueue)
+    pix2pixTH1 = myProcess(
+        "pix2pix1 Thread", get_from_model, inputPix2PixQueue1, outputPix2PixQueue1)
+    pix2pixTH2 = myProcess(
+        "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, outputPix2PixQueue2)
 
-    threads.append(clientTH1)
-    threads.append(pix2pixTH1)
+    process.append(clientTH1)
+    process.append(pix2pixTH1)
+    process.append(clientTH2)
+    process.append(pix2pixTH2)
 
-    for t in threads:
+    for t in process:
         t.start()
 
     try:
         while True:
             frame1 = cap1.read()
+            frame2 = cap2.read()
 
-            if not inputPix2PixQueue.full():
-                inputPix2PixQueue.put(frame1)
+            if not inputPix2PixQueue1.full():
+                inputPix2PixQueue1.put(frame1)
+            if not inputPix2PixQueue2.full():
+                inputPix2PixQueue2.put(frame2)
 
     except Exception as e:
         print(style.RED + str(e))
@@ -230,7 +276,7 @@ def main():
         # Notify threads it's time to exit
         exitFlag = 1
         # Wait for all threads to complete
-        for t in threads:
+        for t in process:
             t.join()
     except KeyboardInterrupt:
         for c in cameras:
@@ -238,13 +284,13 @@ def main():
         # Notify threads it's time to exit
         exitFlag = 1
         # Wait for all threads to complete
-        for t in threads:
+        for t in process:
             t.join()
 
     # Notify threads it's time to exit
     exitFlag = 1
     # Wait for all threads to complete
-    for t in threads:
+    for t in process:
         t.join()
     for c in cameras:
         c.stop()
