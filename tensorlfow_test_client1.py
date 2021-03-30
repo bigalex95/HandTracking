@@ -145,38 +145,38 @@ def gstreamer_pipeline(
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-def crop(img, offset_height, offset_width, target_height, target_width):
-    """
-    Args
-    image 	4-D Tensor of shape [batch, height, width, channels] or 3-D Tensor of shape [height, width, channels].
-    offset_height 	Vertical coordinate of the top-left corner of the result in the input.
-    offset_width 	Horizontal coordinate of the top-left corner of the result in the input.
-    target_height 	Height of the result.
-    target_width 	Width of the result. 
+# def crop(img, offset_height, offset_width, target_height, target_width):
+#     """
+#     Args
+#     image 	4-D Tensor of shape [batch, height, width, channels] or 3-D Tensor of shape [height, width, channels].
+#     offset_height 	Vertical coordinate of the top-left corner of the result in the input.
+#     offset_width 	Horizontal coordinate of the top-left corner of the result in the input.
+#     target_height 	Height of the result.
+#     target_width 	Width of the result. 
 
-    Returns
-    If image was 4-D, a 4-D float Tensor of shape [batch, target_height, target_width, channels] 
-    If image was 3-D, a 3-D float Tensor of shape [target_height, target_width, channels]
-    """
-    return tf.image.crop_to_bounding_box(
-        img, offset_height, offset_width, target_height, target_width)
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+#     Returns
+#     If image was 4-D, a 4-D float Tensor of shape [batch, target_height, target_width, channels] 
+#     If image was 3-D, a 3-D float Tensor of shape [target_height, target_width, channels]
+#     """
+#     return tf.image.crop_to_bounding_box(
+#         img, offset_height, offset_width, target_height, target_width)
+# # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-def resize(img, size, method=ResizeMethod.BILINEAR, preserve_aspect_ratio=False,
-           antialias=False, name=None):
-    """
-    Args
-    images 	4-D Tensor of shape [batch, height, width, channels] or 3-D Tensor of shape [height, width, channels].
-    size 	A 1-D int32 Tensor of 2 elements: new_height, new_width. The new size for the images.
-    method 	An image.ResizeMethod, or string equivalent. Defaults to bilinear.
+# def resize(img, size, method=ResizeMethod.BILINEAR, preserve_aspect_ratio=False,
+#            antialias=False, name=None):
+#     """
+#     Args
+#     images 	4-D Tensor of shape [batch, height, width, channels] or 3-D Tensor of shape [height, width, channels].
+#     size 	A 1-D int32 Tensor of 2 elements: new_height, new_width. The new size for the images.
+#     method 	An image.ResizeMethod, or string equivalent. Defaults to bilinear.
 
-    Returns
-    If images was 4-D, a 4-D float Tensor of shape [batch, new_height, new_width, channels]. 
-    If images was 3-D, a 3-D float Tensor of shape [new_height, new_width, channels]. 
-    """
-    return tf.image.resize(img, size, method=ResizeMethod.BILINEAR, preserve_aspect_ratio=False,
-                           antialias=False, name=None)
+#     Returns
+#     If images was 4-D, a 4-D float Tensor of shape [batch, new_height, new_width, channels]. 
+#     If images was 3-D, a 3-D float Tensor of shape [new_height, new_width, channels]. 
+#     """
+#     return tf.image.resize(img, size, method=ResizeMethod.BILINEAR, preserve_aspect_ratio=False,
+#                            antialias=False, name=None)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
