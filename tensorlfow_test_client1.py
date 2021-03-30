@@ -184,8 +184,6 @@ def get_from_model(name, iq, oq):
     print(style.BLUE + name)
     import tensorflow as tf
 
-    generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
-
     gpus = tf.config.experimental.list_physical_devices('GPU')
     if gpus:
         try:
@@ -198,7 +196,8 @@ def get_from_model(name, iq, oq):
                 logical_gpus), "Logical GPUs")
         except RuntimeError as e:
             # Memory growth must be set before GPUs have been initialized
-            print(style.RED + e)
+            print(style.RED + str(e))
+    generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
     print(style.CYAN + name)
     while not exitFlag:
         if not iq.empty():
