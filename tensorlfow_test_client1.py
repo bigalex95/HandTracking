@@ -73,9 +73,9 @@ class myProcess(Process):
     def run(self):
         print(style.YELLOW + "Starting " + self.name)
         if self.oq:
-            self.function(self.iq, self.oq)
+            self.function(self.name, self.iq, self.oq)
         else:
-            self.function(self.iq)
+            self.function(self.name, self.iq)
         print(style.GREEN + "Exiting " + self.name)
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
@@ -180,7 +180,7 @@ def gstreamer_pipeline(
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-def get_from_model(iq, oq):
+def get_from_model(name, iq, oq):
     import tensorflow as tf
 
     generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
@@ -200,6 +200,7 @@ def get_from_model(iq, oq):
             print(e)
     while not exitFlag:
         if not iq.empty():
+            print(name)
             image = iq.get()
             # print(image.shape)
             # print(type(image))
@@ -220,10 +221,11 @@ def get_from_model(iq, oq):
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
-def send_to_imagiz_server(iq, cl):
+def send_to_imagiz_server(name, iq, cl):
     # encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
     while not exitFlag:
         if not iq.empty():
+            print(name)
             # from image to binary buffer
             image = iq.get()
             # _, image = cv2.imencode('.jpg', iq.get(), encode_param)
