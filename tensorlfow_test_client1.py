@@ -44,7 +44,7 @@ class style():
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 # Pix2Pix variables declaration
 # <==================================================================>
-generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
+# generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
 # <==================================================================>
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 exitFlag = 0
@@ -68,21 +68,6 @@ class myThread(Process):
 
     def run(self):
         print(style.YELLOW + "Starting " + self.name)
-        import tensorflow as tf
-
-        gpus = tf.config.experimental.list_physical_devices('GPU')
-        if gpus:
-            try:
-                # Currently, memory growth needs to be the same across GPUs
-                for gpu in gpus:
-                    tf.config.experimental.set_memory_growth(gpu, True)
-                logical_gpus = tf.config.experimental.list_logical_devices(
-                    'GPU')
-                print(len(gpus), "Physical GPUs,", len(
-                    logical_gpus), "Logical GPUs")
-            except RuntimeError as e:
-                # Memory growth must be set before GPUs have been initialized
-                print(e)
         if self.oq:
             self.function(self.iq, self.oq)
         else:
@@ -161,6 +146,23 @@ def gstreamer_pipeline(
 
 def get_from_model(iq, oq):
     # print(style.RED + str(oq.maxsize))
+    import tensorflow as tf
+
+    generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
+
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        try:
+                # Currently, memory growth needs to be the same across GPUs
+            for gpu in gpus:
+                tf.config.experimental.set_memory_growth(gpu, True)
+            logical_gpus = tf.config.experimental.list_logical_devices(
+                'GPU')
+            print(len(gpus), "Physical GPUs,", len(
+                logical_gpus), "Logical GPUs")
+        except RuntimeError as e:
+            # Memory growth must be set before GPUs have been initialized
+            print(e)
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
