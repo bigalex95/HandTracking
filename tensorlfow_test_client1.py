@@ -57,8 +57,8 @@ client1 = imagiz.TCP_Client(
     server_ip='10.42.0.1', server_port=5550, client_name='cc1')
 client2 = imagiz.TCP_Client(
     server_ip='10.42.0.1', server_port=5550, client_name='cc2')
-SIZE = 256
-NORM = 127.5
+SIZE = 512
+NORM = 255.5
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 
