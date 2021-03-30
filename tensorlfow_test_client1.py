@@ -152,10 +152,10 @@ def gstreamer_pipeline(
 #     offset_height 	Vertical coordinate of the top-left corner of the result in the input.
 #     offset_width 	Horizontal coordinate of the top-left corner of the result in the input.
 #     target_height 	Height of the result.
-#     target_width 	Width of the result. 
+#     target_width 	Width of the result.
 
 #     Returns
-#     If image was 4-D, a 4-D float Tensor of shape [batch, target_height, target_width, channels] 
+#     If image was 4-D, a 4-D float Tensor of shape [batch, target_height, target_width, channels]
 #     If image was 3-D, a 3-D float Tensor of shape [target_height, target_width, channels]
 #     """
 #     return tf.image.crop_to_bounding_box(
@@ -172,8 +172,8 @@ def gstreamer_pipeline(
 #     method 	An image.ResizeMethod, or string equivalent. Defaults to bilinear.
 
 #     Returns
-#     If images was 4-D, a 4-D float Tensor of shape [batch, new_height, new_width, channels]. 
-#     If images was 3-D, a 3-D float Tensor of shape [new_height, new_width, channels]. 
+#     If images was 4-D, a 4-D float Tensor of shape [batch, new_height, new_width, channels].
+#     If images was 3-D, a 3-D float Tensor of shape [new_height, new_width, channels].
 #     """
 #     return tf.image.resize(img, size, method=ResizeMethod.BILINEAR, preserve_aspect_ratio=False,
 #                            antialias=False, name=None)
@@ -181,6 +181,7 @@ def gstreamer_pipeline(
 
 
 def get_from_model(name, iq, oq):
+    print(style.BLUE + name)
     import tensorflow as tf
 
     generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
@@ -188,7 +189,7 @@ def get_from_model(name, iq, oq):
     gpus = tf.config.experimental.list_physical_devices('GPU')
     if gpus:
         try:
-                # Currently, memory growth needs to be the same across GPUs
+            # Currently, memory growth needs to be the same across GPUs
             for gpu in gpus:
                 tf.config.experimental.set_memory_growth(gpu, True)
             logical_gpus = tf.config.experimental.list_logical_devices(
@@ -197,10 +198,9 @@ def get_from_model(name, iq, oq):
                 logical_gpus), "Logical GPUs")
         except RuntimeError as e:
             # Memory growth must be set before GPUs have been initialized
-            print(e)
+            print(style.RED + e)
     while not exitFlag:
         if not iq.empty():
-            print(name)
             image = iq.get()
             # print(image.shape)
             # print(type(image))
@@ -222,10 +222,10 @@ def get_from_model(name, iq, oq):
 
 
 def send_to_imagiz_server(name, iq, cl):
+    print(style.BLUE + name)
     # encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
     while not exitFlag:
         if not iq.empty():
-            print(name)
             # from image to binary buffer
             image = iq.get()
             # _, image = cv2.imencode('.jpg', iq.get(), encode_param)
