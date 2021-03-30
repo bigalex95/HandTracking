@@ -199,8 +199,10 @@ def get_from_model(name, iq, oq):
         except RuntimeError as e:
             # Memory growth must be set before GPUs have been initialized
             print(style.RED + e)
+    print(style.CYAN + name)
     while not exitFlag:
         if not iq.empty():
+            print(style.GREEN + name)
             image = iq.get()
             # print(image.shape)
             # print(type(image))
@@ -226,6 +228,7 @@ def send_to_imagiz_server(name, iq, cl):
     # encode_param = [int(cv2.IMWRITE_JPEG_QUALITY), 90]
     while not exitFlag:
         if not iq.empty():
+            print(style.GREEN + name)
             # from image to binary buffer
             image = iq.get()
             # _, image = cv2.imencode('.jpg', iq.get(), encode_param)
