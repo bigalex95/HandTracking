@@ -2,46 +2,7 @@ from imutils.video import FPS
 import numpy as np
 import cv2
 import imagiz
-import queue
-import json
 import pyfakewebcam
-
-# -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-with open('hand_pose.json', 'r') as f:
-    hand_pose = json.load(f)
-
-
-def find_distance(joints):
-    """
-    This method finds the distance between each joints
-    Input: a list that contains the [x,y] positions of the 21 joints
-    Output: a list that contains the distance between the joints
-    """
-    joints_features = []
-    for i in joints:
-        for j in joints:
-            dist_between_i_j = math.sqrt((i[0]-j[0])**2+(i[1]-j[1])**2)
-            joints_features.append(dist_between_i_j)
-    return joints_features
-
-
-def draw_joints(image, joints):
-    count = 0
-    x = []
-    y = []
-    for i in joints:
-        if (i[0] == 0) and (i[1] == 0):
-            count += 1
-        else:
-            x.append(i[0])
-            y.append(i[1])
-    if count >= 19:
-        return
-    for i in joints:
-        cv2.circle(image, (i[0], i[1]), 2, (0, 0, 255), 1)
-    meanX = int((max(x) - min(x)) / 2)
-    meanY = int((max(y) - min(y)) / 2)
-    cv2.circle(image, (min(x) + meanX, min(y) + meanY), 3, (0, 255, 0), 3)
 
 
 def main():
