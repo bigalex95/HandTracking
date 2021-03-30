@@ -6,6 +6,7 @@ from multiprocessing import Process, Queue
 import os
 import queue
 import imagiz
+import parser
 # import tensorflow as tf
 
 # gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -51,12 +52,12 @@ exitFlag = 0
 queueLock = threading.Lock()
 inputPix2PixQueue1 = Queue(3)
 outputPix2PixQueue1 = Queue(3)
-inputPix2PixQueue2 = Queue(3)
-outputPix2PixQueue2 = Queue(3)
-client1 = imagiz.TCP_Client(
-    server_ip='10.42.0.1', server_port=5550, client_name='cc1')
-client2 = imagiz.TCP_Client(
-    server_ip='10.42.0.1', server_port=5550, client_name='cc2')
+# inputPix2PixQueue2 = Queue(3)
+# outputPix2PixQueue2 = Queue(3)
+# client1 = imagiz.TCP_Client(
+#     server_ip='10.42.0.1', server_port=5550, client_name='cc1')
+# client2 = imagiz.TCP_Client(
+#     server_ip='10.42.0.1', server_port=5550, client_name='cc2')
 SIZE = 512
 NORM = 255.5
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -241,10 +242,26 @@ def main():
     global exitFlag
     process = []
     cameras = []
+    parser = argparse.ArgumentParser(
+        description='')
+
+    parser.add_argument('--sensor', dest='sensor',
+                        help='', type=int, default=0)
+    parser.add_argument('--clientName', dest='clientName',
+                        help='', type=str, default='cc1')
+    parser.add_argument('--serverIP', dest='serverIP',
+                        help='', type=str, default='10.42.0.1')
+    parser.add_argument('--serverPORT', dest='serverPORT',
+                        help='', type=int, default=5550)
+    args = parser.parse_args()
+    print(args)
+    client1 = imagiz.TCP_Client(
+        server_ip=args.serverIP, server_port=args.serverPORT, client_name=args.clientName)
+
     cap1 = WebcamVideoStream(src=gstreamer_pipeline(
-        sensor_id=0), device=cv2.CAP_GSTREAMER).start()
-    cap2 = WebcamVideoStream(src=gstreamer_pipeline(
-        sensor_id=1), device=cv2.CAP_GSTREAMER).start()
+        sensor_id=args.sensor), device=cv2.CAP_GSTREAMER).start()
+    # cap2 = WebcamVideoStream(src=gstreamer_pipeline(
+    #     sensor_id=1), device=cv2.CAP_GSTREAMER).start()
     cameras.append(cap1)
     cameras.append(cap2)
     clientTH1 = myProcess("client 1", send_to_imagiz_server,
@@ -254,13 +271,13 @@ def main():
 
     pix2pixTH1 = myProcess(
         "pix2pix1 Thread", get_from_model, inputPix2PixQueue1, outputPix2PixQueue1)
-    pix2pixTH2 = myProcess(
-        "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, outputPix2PixQueue2)
+    # pix2pixTH2 = myProcess(
+    #     "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, outputPix2PixQueue2)
 
     process.append(clientTH1)
     process.append(pix2pixTH1)
-    process.append(clientTH2)
-    process.append(pix2pixTH2)
+    # process.append(clientTH2)
+    # process.append(pix2pixTH2)
 
     for t in process:
         t.start()
@@ -268,12 +285,12 @@ def main():
     try:
         while True:
             frame1 = cap1.read()
-            frame2 = cap2.read()
+            # frame2 = cap2.read()
 
             if not inputPix2PixQueue1.full():
                 inputPix2PixQueue1.put(frame1)
-            if not inputPix2PixQueue2.full():
-                inputPix2PixQueue2.put(frame2)
+            # if not inputPix2PixQueue2.full():
+            #     inputPix2PixQueue2.put(frame2)
 
     except Exception as e:
         print(style.RED + str(e))
