@@ -54,9 +54,9 @@ outputPix2PixQueue1 = Queue(3)
 inputPix2PixQueue2 = Queue(3)
 outputPix2PixQueue2 = Queue(3)
 client1 = imagiz.TCP_Client(
-    server_ip='10.42.0.1', server_port=5550, client_name='cc1')
+    server_ip='10.42.0.1', server_port=5555, client_name='cc1', request_retries=100)
 client2 = imagiz.TCP_Client(
-    server_ip='10.42.0.1', server_port=5550, client_name='cc2')
+    server_ip='10.42.0.1', server_port=5555, client_name='cc2', request_retries=100)
 SIZE = 512
 NORM = 255.5
 # -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
@@ -198,6 +198,7 @@ def get_from_model(name, iq, oq):
             # Memory growth must be set before GPUs have been initialized
             print(style.RED + str(e))
     generator = tf.saved_model.load("./model/pix2pixTF-TRT512")
+    print(style.GREEN + name)
     while not exitFlag:
         if not iq.empty():
             image = iq.get()
@@ -245,18 +246,18 @@ def main():
     cameras.append(cap2)
     clientTH1 = myProcess("client 1", send_to_imagiz_server,
                           outputPix2PixQueue1, client1)
-    clientTH2 = myProcess("client 2", send_to_imagiz_server,
-                          outputPix2PixQueue2, client2)
+    # clientTH2 = myProcess("client 2", send_to_imagiz_server,
+                        #   outputPix2PixQueue2, client2)
 
     pix2pixTH1 = myProcess(
         "pix2pix1 Thread", get_from_model, inputPix2PixQueue1, outputPix2PixQueue1)
-    pix2pixTH2 = myProcess(
-        "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, outputPix2PixQueue2)
+    # pix2pixTH2 = myProcess(
+        # "pix2pix2 Thread", get_from_model, inputPix2PixQueue2, outputPix2PixQueue2)
 
     process.append(clientTH1)
     process.append(pix2pixTH1)
-    process.append(clientTH2)
-    process.append(pix2pixTH2)
+    # process.append(clientTH2)
+    # process.append(pix2pixTH2)
 
     for t in process:
         t.start()
@@ -264,12 +265,12 @@ def main():
     try:
         while True:
             frame1 = cap1.read()
-            frame2 = cap2.read()
+            # frame2 = cap2.read()
 
             if not inputPix2PixQueue1.full():
                 inputPix2PixQueue1.put(frame1)
-            if not inputPix2PixQueue2.full():
-                inputPix2PixQueue2.put(frame2)
+            # if not inputPix2PixQueue2.full():
+            #     inputPix2PixQueue2.put(frame2)
 
     except Exception as e:
         print(style.RED + str(e))
