@@ -2,4 +2,7 @@ model/
 venv/
 node_modules/
 *.zip
-*.pth
+*.pth__pycache__/
+*.pyc
+.vscode/
+images/
